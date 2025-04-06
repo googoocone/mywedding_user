@@ -3,6 +3,8 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Motion from "@/components/pages/home/motion";
 import DynamicTitle from "@/components/pages/home/dynamicTitle";
+import SearchBar from "@/components/common/SearchBar";
+import Link from "next/link";
 
 const hotSearch = [
   "르비르모어 강남",
@@ -20,8 +22,6 @@ const guideMenu = [
 ];
 
 export default function Home() {
-  console.log("motion 확인", motion.div);
-
   return (
     <div className="w-full h-full sm:min-h-[800px] flex flex-col items-center justify-start relative">
       {/* 메인화면 */}
@@ -94,26 +94,11 @@ export default function Home() {
         </div>
       </div>
       <button className="w-[120px] h-[50px] sm:w-[150px] sm:h-[60px] z-10 bg-[#434343] text-white text-[14px] fixed bottom-10 rounded-full transition-all duration-200 hover:text-[15px] hover:font-semi cursor-pointer">
-        전체 웨딩홀 보기
+        <Link href="/halltour">전체 웨딩홀 보기</Link>
       </button>
       <div className="w-full h-5 bg-gray-100"></div>
 
       <Motion></Motion>
-    </div>
-  );
-}
-
-function SearchBar() {
-  return (
-    <div className="w-full sm:w-[640px] h-[50px] flex rounded-full overflow-hidden border border-gray-300 relative">
-      <input
-        type="text"
-        placeholder="검색하고 싶은 웨딩홀을 입력해주세요"
-        className="w-full h-full pl-6 pr-2 focus:outline-none placeholder:text-sm sm:placeholder:text-base md:placeholder:text-lg"
-      />
-      <button className="w-[60px] h-full flex items-center justify-center bg-primary text-white rounded-r-full focus:outline-none cursor-pointer ">
-        <Image src="/search.svg" width={32} height={32} alt="검색 버튼"></Image>
-      </button>
     </div>
   );
 }

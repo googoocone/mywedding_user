@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AlignJustify, X } from "lucide-react";
 import { useState } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const navList = [
@@ -16,8 +17,9 @@ const navList = [
 
 export default function Navigation() {
   const [isMenu, setIsMenu] = useState(false);
-  console.log("isMenu", isMenu);
-  let status = "authenticated";
+  let session = useSession();
+  let status = session.status;
+  console.log("status", status);
 
   return (
     <>
@@ -43,9 +45,26 @@ export default function Navigation() {
             </ul>
           </div>
           <div className="w-[180px] h-[40px] flex items-center justify-center">
-            <button className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer">
-              로그인
-            </button>
+            {status !== "authenticated" ? (
+              <button
+                onClick={() => signIn("kakao", { callbackUrl: "/" })}
+                className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
+              >
+                로그인
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <button className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer">
+                  <Link href="/users">내정보</Link>
+                </button>
+                <button
+                  onClick={() => signOut()}
+                  className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
+                >
+                  로그아웃
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -85,29 +104,29 @@ export default function Navigation() {
                 <>
                   <li>
                     <a
-                      href={"/users/signin"}
+                      href={"/users"}
                       className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                     >
                       내정보
                     </a>
                   </li>
                   <li>
-                    <a
-                      href={"/users/signin"}
-                      className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
+                    <button
+                      onClick={() => signOut()}
+                      className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                     >
                       로그아웃
-                    </a>
+                    </button>
                   </li>
                 </>
               ) : (
                 <li>
-                  <a
-                    href={"/users/signin"}
-                    className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
+                  <button
+                    onClick={() => signIn("kakao", { callbackUrl: "/" })}
+                    className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                   >
                     로그인
-                  </a>
+                  </button>
                 </li>
               )}
             </ul>

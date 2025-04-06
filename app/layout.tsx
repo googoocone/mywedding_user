@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import Navigation from "@/components/Navigation";
 import "./globals.css";
+import SessionProvider from "./provider";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Navigation></Navigation>
-        {children}
-        <Footer></Footer>
+        <SessionProvider>
+          <Navigation></Navigation>
+          {children}
+          <Footer></Footer>
+        </SessionProvider>
       </body>
     </html>
   );
