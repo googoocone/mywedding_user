@@ -1,6 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { AlignJustify } from "lucide-react";
+import { AlignJustify, X } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const navList = [
   { name: "홈", url: "/" },
@@ -11,6 +15,10 @@ const navList = [
 ];
 
 export default function Navigation() {
+  const [isMenu, setIsMenu] = useState(false);
+  console.log("isMenu", isMenu);
+  let status = "authenticated";
+
   return (
     <>
       <div className="hidden w-full min-w-[1250px] h-[70px] sm:flex items-center justify-center">
@@ -47,10 +55,65 @@ export default function Navigation() {
             <Image src="/logo.svg" fill alt="logo"></Image>
           </Link>
         </div>
-        <div className="">
-          <AlignJustify></AlignJustify>
+        <div className="" onClick={() => setIsMenu((prev) => !prev)}>
+          {!isMenu ? <AlignJustify></AlignJustify> : <X></X>}
         </div>
       </div>
+      {/* 드롭다운 메뉴 영역 */}
+      <AnimatePresence>
+        {isMenu && (
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -30, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex flex-col justify-between h-screen pb-[150px] bg-white z-10 fixed top-[70px] left-0" // fixed 위치 조정
+          >
+            <ul className="flex flex-col space-y-6 p-5">
+              {navList.map((item, index) => (
+                <a
+                  key={index}
+                  href={item.url}
+                  className="text-lg font-medium hover:text-gray-600 transition"
+                >
+                  <li>{item.name}</li>
+                </a>
+              ))}
+            </ul>
+            <ul className="flex flex-col space-y-4 p-5">
+              {status === "authenticated" ? (
+                <>
+                  <li>
+                    <a
+                      href={"/users/signin"}
+                      className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
+                    >
+                      내정보
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href={"/users/signin"}
+                      className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
+                    >
+                      로그아웃
+                    </a>
+                  </li>
+                </>
+              ) : (
+                <li>
+                  <a
+                    href={"/users/signin"}
+                    className="block px-4 py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
+                  >
+                    로그인
+                  </a>
+                </li>
+              )}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
