@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# .gitignore 파일 열기 (없으면 생성)
+echo "mywedding-136d8-firebase-adminsdk-fbsvc-bf78e895ba.json" >> .gitignore
