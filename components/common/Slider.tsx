@@ -26,7 +26,6 @@ export default function MySwiper() {
           slidesPerView: 4, // 태블릿 이상
         },
       }}
-      onSwiper={(swiper) => console.log(swiper)}
       className="h-[100px] "
     >
       <SwiperSlide

@@ -19,7 +19,6 @@ export default function Navigation() {
   const [isMenu, setIsMenu] = useState(false);
   let session = useSession();
   let status = session.status;
-  console.log("status", status);
 
   return (
     <>
