@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { loginWithFirebaseToken } from '@/lib/auth/loginWithFirebaseToken';
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +31,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    return NextResponse.json(data); // ✅ Next.js가 요구하는 응답 형식
+    const firebase_token = data.firebase_token
+    const kakao_user = await data.kakao_user
+    const response = await loginWithFirebaseToken(firebase_token,kakao_user)
+
+
+    return NextResponse.json(response); // ✅ Next.js가 요구하는 응답 형식
   } catch (err) {
     console.error("🔥 서버 내부 에러:", err);
     return NextResponse.json(

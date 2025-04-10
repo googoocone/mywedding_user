@@ -21,6 +21,7 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         try {
+          console.log('얼마나 자주 요청되길래..?')
           // Firebase Custom Token 요청을 보냄냄
           const firebaseRes = await fetch("http://localhost:3000/api/auth/firebase-token", {
             method: "POST",
