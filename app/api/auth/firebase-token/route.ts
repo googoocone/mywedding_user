@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginWithFirebaseToken } from '@/lib/auth/loginWithFirebaseToken';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +12,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const res = await fetch("http://127.0.0.1:8000/auth/firebase-login", {
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/firebase-login`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${kakaoAccessToken}`,
@@ -23,20 +23,20 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("🔥 백엔드 응답 실패:", errorText);
       return NextResponse.json(
-        { error: "Server token issue from backend" },
+        { error: "Server token issue from backend", details: errorText },
         { status: res.status }
       );
     }
 
     const data = await res.json();
-    const firebase_token = data.firebase_token
-    const kakao_user = await data.kakao_user
-    const response = await loginWithFirebaseToken(firebase_token,kakao_user)
 
+    // 🔥 여기서는 Firebase 커스텀 토큰만 전달하면 됨
+    return NextResponse.json({
+      firebase_token: data.firebase_token,
+      kakao_user: data.kakao_user,
+    });
 
-    return NextResponse.json(response); // ✅ Next.js가 요구하는 응답 형식
   } catch (err) {
     console.error("🔥 서버 내부 에러:", err);
     return NextResponse.json(

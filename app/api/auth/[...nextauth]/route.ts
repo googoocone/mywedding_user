@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import KakaoProvider from "next-auth/providers/kakao";
 
+
 export const authOptions: NextAuthOptions = {
   // Configure one or more authentication providers
   session: {
@@ -12,6 +13,11 @@ export const authOptions: NextAuthOptions = {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID || "",
       clientSecret: process.env.KAKAO_CLIENT_SECRET || "",
+      // authorization: {
+      //   params: {
+      //     redirect_uri: "https://2954-xxxx.ngrok-free.app/api/auth/callback/kakao",
+      //   },
+      // },
     }),
     // ...add more providers here
   ],
@@ -20,19 +26,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       if (account) {
         token.accessToken = account.access_token;
-        try {
-          console.log('얼마나 자주 요청되길래..?')
-          // Firebase Custom Token 요청을 보냄냄
-          const firebaseRes = await fetch("http://localhost:3000/api/auth/firebase-token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kakaoAccessToken: token.accessToken! }),
-          });
-  
-          console.log("✅ 서버 토큰 발급 성공:");
-        } catch (err) {
-          console.error("❌ 서버 토큰 발급 실패", err);
-        }
       }
       if (user) {
         token.id = user.id;

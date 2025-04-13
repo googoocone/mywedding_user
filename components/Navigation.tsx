@@ -46,23 +46,15 @@ export default function Navigation() {
           <div className="w-[180px] h-[40px] flex items-center justify-center">
             {status !== "authenticated" ? (
               <button
-                onClick={() => signIn("kakao", { callbackUrl: "/" })}
+                onClick={() =>
+                  signIn("kakao", { callbackUrl: "/", redirect: false })
+                }
                 className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
               >
                 로그인
               </button>
             ) : (
-              <div className="flex items-center justify-center gap-2">
-                <button className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer">
-                  <Link href="/users">내정보</Link>
-                </button>
-                <button
-                  onClick={() => signOut()}
-                  className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
-                >
-                  로그아웃
-                </button>
-              </div>
+              <HeaderButtons></HeaderButtons>
             )}
           </div>
         </div>
@@ -121,7 +113,9 @@ export default function Navigation() {
               ) : (
                 <li>
                   <button
-                    onClick={() => signIn("kakao", { callbackUrl: "/" })}
+                    onClick={() =>
+                      signIn("kakao", { callbackUrl: "/", redirect: false })
+                    }
                     className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                   >
                     로그인
@@ -135,3 +129,47 @@ export default function Navigation() {
     </>
   );
 }
+
+const HeaderButtons = () => {
+  const checkUser = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`,
+        {
+          method: "GET",
+          credentials: "include", // 🔥 쿠키 포함 필수
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("인증 실패");
+      }
+
+      const data = await res.json();
+      console.log("✅ 인증된 유저:", data);
+      // 👉 여기에 Link 이동 추가도 가능
+      window.location.href = "/users"; // 또는 router.push("/users")
+    } catch (err) {
+      console.error("❌ 인증 실패:", err);
+      alert("로그인이 필요합니다");
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        onClick={checkUser}
+        className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
+      >
+        내정보
+      </button>
+
+      <button
+        onClick={() => signOut()}
+        className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
+      >
+        로그아웃
+      </button>
+    </div>
+  );
+};

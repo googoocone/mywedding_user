@@ -1,3 +1,5 @@
+'use client'
+
 import { signInWithCustomToken } from "firebase/auth";
 import { auth } from "@/lib/firebase/client"; // 초기화된 Firebase Auth 객체
 
@@ -8,14 +10,17 @@ export const loginWithFirebaseToken = async (firebaseToken: string, kakao_user: 
     const idToken = await userCredential.user.getIdToken();
 
     // 🔹 2. 백엔드로 ID Token 전송
-    const serverRes = await fetch("http://127.0.0.1:8000/auth/server-login", {
+    console.log('process', process.env.BACKEND_URL)
+    const serverRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/server-login`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json"
       },
       body : JSON.stringify({
         kakao_user : kakao_user
-      })
+      }),
+      credentials: "include",
     });
 
     if (!serverRes.ok) {
