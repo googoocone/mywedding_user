@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 import Navigation from "@/components/Navigation";
 import "./globals.css";
-import SessionProvider from "./provider";
+
 import Footer from "@/components/Footer";
-import AuthSync from "@/components/auth/AuthSync";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -19,12 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
+        <AuthProvider>
           <Navigation></Navigation>
-          <AuthSync />
           {children}
           <Footer></Footer>
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AlignJustify, X } from "lucide-react";
-import { useState } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { useContext, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { loginWithKakao } from "@/lib/auth/loginWithKakao";
+import { AuthContext } from "@/context/AuthContext";
+import { logout } from "@/lib/auth/logout";
 
 const navList = [
   { name: "홈", url: "/" },
@@ -17,8 +19,9 @@ const navList = [
 
 export default function Navigation() {
   const [isMenu, setIsMenu] = useState(false);
-  let session = useSession();
-  let status = session.status;
+  const { user }: any = useContext(AuthContext);
+  const { setUser }: any = useContext(AuthContext);
+  console.log("user", user);
 
   return (
     <>
@@ -33,28 +36,26 @@ export default function Navigation() {
             <ul className="flex space-x-12 text-lg font-medium">
               {navList.map((item, index) => (
                 <li key={index}>
-                  <a
+                  <Link
                     href={item.url}
                     className="hover:text-gray-600 transition text-[16px] font-semibold"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
           <div className="w-[180px] h-[40px] flex items-center justify-center">
-            {status !== "authenticated" ? (
+            {user ? (
+              <HeaderButtons></HeaderButtons>
+            ) : (
               <button
-                onClick={() =>
-                  signIn("kakao", { callbackUrl: "/", redirect: false })
-                }
+                onClick={loginWithKakao}
                 className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
               >
                 로그인
               </button>
-            ) : (
-              <HeaderButtons></HeaderButtons>
             )}
           </div>
         </div>
@@ -81,17 +82,17 @@ export default function Navigation() {
           >
             <ul className="flex flex-col space-y-6 p-5">
               {navList.map((item, index) => (
-                <a
+                <Link
                   key={index}
                   href={item.url}
                   className="text-lg font-medium hover:text-gray-600 transition"
                 >
                   <li>{item.name}</li>
-                </a>
+                </Link>
               ))}
             </ul>
             <ul className="flex flex-col space-y-4 p-5">
-              {status === "authenticated" ? (
+              {user ? (
                 <>
                   <li>
                     <a
@@ -103,7 +104,7 @@ export default function Navigation() {
                   </li>
                   <li>
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => logout(setUser)}
                       className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                     >
                       로그아웃
@@ -113,9 +114,7 @@ export default function Navigation() {
               ) : (
                 <li>
                   <button
-                    onClick={() =>
-                      signIn("kakao", { callbackUrl: "/", redirect: false })
-                    }
+                    onClick={loginWithKakao}
                     className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                   >
                     로그인
@@ -131,6 +130,7 @@ export default function Navigation() {
 }
 
 const HeaderButtons = () => {
+  const { setUser }: any = useContext(AuthContext);
   const checkUser = async () => {
     try {
       const res = await fetch(
@@ -165,7 +165,7 @@ const HeaderButtons = () => {
       </button>
 
       <button
-        onClick={() => signOut()}
+        onClick={() => logout(setUser)}
         className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
       >
         로그아웃
