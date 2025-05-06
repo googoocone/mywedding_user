@@ -78,16 +78,17 @@ export default function Navigation() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -30, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full flex flex-col justify-between h-screen pb-[150px] bg-white z-10 fixed top-[70px] left-0" // fixed 위치 조정
+            className="w-full flex flex-col justify-between h-screen pb-[150px] bg-white z-11 fixed top-[70px] left-0" // fixed 위치 조정
           >
             <ul className="flex flex-col space-y-6 p-5">
               {navList.map((item, index) => (
                 <Link
+                  onClick={() => setIsMenu((prev) => !prev)}
                   key={index}
                   href={item.url}
                   className="text-lg font-medium hover:text-gray-600 transition"
                 >
-                  <li>{item.name}</li>
+                  {item.name}
                 </Link>
               ))}
             </ul>

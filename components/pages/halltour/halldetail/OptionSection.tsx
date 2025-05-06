@@ -1,272 +1,88 @@
 import Link from "next/link";
-import cn from "classnames";
+import cn from "classnames"; // cn 함수 import 확인
 
-import { FaInstagram } from "react-icons/fa";
+// FaInstagram 아이콘이 사용되지 않는 것 같으니 제거해도 됩니다.
+// import { FaInstagram } from "react-icons/fa";
 
-export default function OptionSection({ data }: any) {
+// OptionDescDisplay 컴포넌트 import 확인
+import OptionDescDisplay from "./OptionDescDisplay";
+
+// OptionSection 컴포넌트는 hall_options 배열을 prop으로 받습니다.
+// 정확한 타입 정의가 있다면 { hall_options: YourOptionItemType[] } 와 같이 사용하세요.
+export default function OptionSection({
+  hall_options,
+}: {
+  hall_options: any[];
+}) {
+  // 타입 힌트 추가
+  // hall_options 배열이 유효한지 확인 후 렌더링 (안전성 추가)
+  if (
+    !hall_options ||
+    !Array.isArray(hall_options) ||
+    hall_options.length === 0
+  ) {
+    return null; // 옵션 데이터가 없으면 아무것도 렌더링하지 않음
+  }
+
   return (
-    <div className="w-full flex flex-col items-start justify-center">
+    // 전체 섹션 컨테이너
+    <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
+      {/* 섹션 제목 */}
       <div className="text-xl font-[600] mb-4">옵션 사항</div>
+
       <div className="w-full flex items-center justify-center">
-        {/* 이 부분이 기본정보의 요소들이 들어가는 부분 */}
-        <div className="w-full  flex flex-col items-start gap-4">
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              생화장식
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.flowerPrice.price.map((item: any, index: number) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.flowerPrice.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item != "선택",
-                      "text-gray-500": item == "선택",
-                    })}
-                  >
-                    {item}
+        <div className="w-full flex flex-col items-start gap-5">
+          {hall_options.map(
+            (
+              item: any,
+              index: number // key prop을 위해 index 타입 명시
+            ) => (
+              <div
+                key={item.id || index}
+                className="w-full flex items-start justify-between "
+              >
+                <div className="hidden sm:block sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
+                  {item.name || "옵션 이름 없음"}{" "}
+                  {/* 안전한 접근 및 폴백 텍스트 */}
+                </div>
+
+                {/* 옵션 이름 표시 영역 (작은 화면용) - OptionDescDisplay 컴포넌트 사용 */}
+                {/* self-start 유지 */}
+                <div className="w-[130px] sm:hidden flex-shrink-0 text-gray-500 self-start">
+                  {/* item 데이터를 prop으로 전달 */}
+                  <OptionDescDisplay item={item}></OptionDescDisplay>
+                </div>
+
+                <div className="w-full sm:w-[570px] pl-3 sm:pl-[20px] flex flex-wrap items-start justify-start gap-6 sm:gap-8">
+                  {/* 가격 표시 영역 */}
+                  {/* self-start 유지 */}
+                  <div className="w-[95px] flex-shrink-0 self-start gap-2 flex-wrap text-gray-700">
+                    {item.price?.toLocaleString() || "가격 정보 없음"}원{" "}
+                    {/* 안전한 접근 및 폴백 */}
                   </div>
-                ))}
-              </div>
-              <div className="flex w-[240px] gap-4 self-start">
-                {data.flowerPrice.company.map((item: any, index: number) => (
-                  <div className=" flex items-center justify-center gap-1">
-                    <a
-                      key={index}
-                      href={data.flowerPrice.instagram[index]}
-                      target="_blank"
-                      rel="noopener noreferrer"
+
+                  <div className="w-[40px] flex-shrink-0 self-start">
+                    <div
+                      className={cn({
+                        "text-red-400": item.is_required === true, // 일치 연산자 사용
+
+                        "text-gray-500": item.is_required !== true,
+                      })}
                     >
-                      <FaInstagram className="" />
-                    </a>
-                    {item}
+                      {item.is_required === true ? "필수" : "선택"}{" "}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              스냅사진
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.snapPhoto.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.snapPhoto.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
+
+                  <div className="hidden sm:block sm:w-[335px] text-gray-700">
+                    {item.description || "설명 정보 없음"}{" "}
                   </div>
-                ))}
+                </div>
               </div>
-              <div className="flex w-[250px] gap-4  ml-4">
-                {data.snapPhoto.company.map((item: any, index: number) => (
-                  <a
-                    key={item}
-                    href={data.snapPhoto.instagram[index]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1"
-                  >
-                    <FaInstagram />
-                    {item}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              폐백
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.pyeback.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.pyeback.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              생화랩핑
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.flowerWrapping.price.length === 0
-                  ? "서비스"
-                  : data.flowerWrapping.price}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.flowerWrapping.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              플라워샤워
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.flowerShower.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.flowerShower.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              포토부스
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.photoBooth.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.photoBooth.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              주례
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.officiant.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.officiant.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              사회
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.mc.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.mc.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[100px] flex-shrink-0 text-gray-500 self-start">
-              축가
-            </div>
-            <div className="w-[650px] pl-[20px] pr-[50px] flex flex-wrap items-center justify-start gap-8">
-              <div className="w-[200px] flex gap-2 flex-wrap">
-                {data.weddingSong.price.map((item: any, index: any) => (
-                  <div key={index}>{item.toLocaleString()}원</div>
-                ))}
-              </div>
-              <div className="flex-shrink-0 self-start">
-                {data.weddingSong.option.map((item: any, index: any) => (
-                  <div
-                    key={index}
-                    className={cn({
-                      "text-red-400": item !== "선택",
-                      "text-gray-500": item === "선택",
-                    })}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-4 ml-4"></div>
-            </div>
-          </div>
+            )
+          )}
         </div>
       </div>
+
       <div className="w-full border border-gray-300 my-4"></div>
     </div>
   );

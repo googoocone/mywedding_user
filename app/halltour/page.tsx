@@ -1,21 +1,29 @@
+// Halltour.tsx
+
 "use client";
 
 import HallCard from "@/components/pages/halltour/HallCard";
 import HallFilter from "@/components/pages/halltour/HallFilter";
 import HallSwiper from "@/components/pages/halltour/HallSwiper";
 // import HallViewed from "@/components/pages/halltour/HallViewed"; // 사용되지 않는 것 같으면 삭제 고려
-import { weddingHallList } from "@/constants"; // 필요없으면 삭제 고려
+// import { weddingHallList } from "@/constants"; // 필요없으면 삭제 고려
 import { useState, useEffect, useMemo } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
 import { GiSettingsKnobs } from "react-icons/gi";
 import { useWeddingFilterStore } from "@/store/useWeddingFilterStore";
-// 백엔드 응답 구조에 맞는 인터페이스 임포트
-import { CompanyWithOneHallOut } from "@/interface/weddingData"; // 실제 경로 및 타입 확인
+// 백엔드 응답 구조에 맞는 인터페이스 임포트 (필요하다면 정확히 정의하여 사용)
+// interface HallPhoto { id: number; url: string; ... }
+// interface Estimate { id: number; hall_price: number; ... meal_prices: MealPrice[]; ... }
+// interface HallInclude { id: number; category: string; ... }
+// interface Hall { id: number; name: string; ... hall_photos: HallPhoto[]; estimates: Estimate[]; hall_includes: HallInclude[]; ... }
+// interface WeddingCompany { id: number; name: string; address: string; ... halls: Hall[]; ... }
+// import { WeddingCompany } from "@/interface/weddingData"; // 예시: 정확한 타입 임포트
 import MobileHallFilter from "@/components/pages/halltour/MobileHallFilter";
 
 const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논현", "w웨딩"];
 
 export default function Halltour() {
+  // Zustand 스토어에서 필터 상태 가져오기
   const selectedRegion = useWeddingFilterStore((state) => state.selectedRegion);
   const selectedSubRegion = useWeddingFilterStore(
     (state) => state.selectedSubRegion
@@ -33,16 +41,19 @@ export default function Halltour() {
     (state) => state.setAppliedSearchTerm
   );
 
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false); // --- 백엔드에서 불러온 데이터를 저장하는 상태 값들 --- // // ✅ 이제 List<CompanyWithOneHallOut> 타입의 데이터가 저장됩니다.
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false); // 모바일 필터 모달 상태 // 백엔드에서 불러온 원본 데이터를 저장하는 상태 // 백엔드 응답 구조는 WeddingCompany 객체들의 리스트 형태입니다. // 정확한 타입 정의가 있다면 WeddingCompany[]와 같이 사용하세요.
 
-  const [halls, setHalls] = useState<CompanyWithOneHallOut[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // 로딩 상태 유지
-  const [error, setError] = useState<string | null>(null); // 에러 상태 유지
+  const [halls, setHalls] = useState<any[]>([]); // any[] 또는 WeddingCompany[] 타입 사용
+
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+  const [error, setError] = useState<string | null>(null); // 에러 상태 // 백엔드에서 데이터 가져오는 useEffect 훅
 
   useEffect(() => {
     const fetchWeddingHalls = async () => {
+      setIsLoading(true); // 데이터 페칭 시작 시 로딩 상태 활성화
       try {
         // 백엔드 API 엔드포인트 URL
+        // 백엔드는 모든 업체와 그에 딸린 모든 홀, 사진, 견적 등을 포함한 리스트를 반환한다고 가정합니다.
         const apiEndpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_wedding_halls`; // 백엔드 라우터 경로 확인
 
         const response = await fetch(apiEndpoint, {
@@ -58,12 +69,11 @@ export default function Halltour() {
               response.statusText
             } - ${errorBody.detail || ""}`
           );
-        }
+        } // ✅ 백엔드에서 가져온 데이터는 업체 객체들의 리스트입니다. // 각 업체 객체는 모든 홀과 관련 정보를 halls 리스트 형태로 가집니다.
 
-        // ✅ FIX: 백엔드 응답 타입을 CompanyWithOneHallOut[] 로 가정
-        const data: CompanyWithOneHallOut[] = await response.json();
+        const data: any[] = await response.json(); // 데이터 구조는 제공해주신 JSON 예시와 같습니다.
         console.log("halls_data", data);
-        setHalls(data);
+        setHalls(data); // 원본 데이터 그대로 상태에 저장
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
         console.error("Error fetching wedding halls:", err);
@@ -73,69 +83,116 @@ export default function Halltour() {
     };
 
     fetchWeddingHalls();
-  }, []); // 빈 배열: 컴포넌트가 처음 마운트될 때만 실행 // --- 필터링 로직 (useMemo 사용하여 성능 최적화) ---
+  }, []); // 빈 배열: 컴포넌트가 처음 마운트될 때만 실행 // --- 필터링 로직 (useMemo 사용하여 성능 최적화) --- // 백엔드에서 가져온 원본 데이터를 가지고 필터링 및 데이터 재구성을 수행합니다.
 
   const filteredWeddingHalls = useMemo(() => {
-    // ✅ FIX: 이제 halls는 CompanyWithOneHallOut 객체들의 리스트입니다.
-    let filtered = halls;
+    // 입력: halls는 백엔드에서 가져온 모든 WeddingCompany 객체들의 리스트입니다.
+    //       각 Company 객체는 halls 속성에 해당 업체의 모든 Hall 객체 리스트를 가집니다.
+    // 출력: 업체명 기준으로 중복이 제거되고 다른 필터가 적용된 Company 객체 리스트.
+    //       각 Company 객체의 'halls' 속성은 해당 업체명의 모든 홀들을 합친 목록입니다.
 
-    if (!filtered || filtered.length === 0) {
-      return [];
-    }
+    if (!halls || halls.length === 0) {
+      return []; // 데이터가 없으면 빈 배열 반환
+    } // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. --- // Map을 사용하여 업체명 기준으로 데이터를 그룹화하고 해당 업체명의 모든 홀 목록을 수집합니다. // Map: key = 업체명 (string), value = { companyInfo: Company, allHalls: Hall[] } //    companyInfo: 해당 업체명의 대표 Company 객체 (보통 첫 번째 발견된 것) //    allHalls: 해당 업체명의 모든 Company 객체들의 halls 리스트에 있는 모든 Hall 객체들을 합친 목록
+
+    const consolidatedCompanyData: Map<
+      string,
+      { representativeCompany: any; allHalls: any[] }
+    > = new Map(); // use any or specific types // 백엔드에서 가져온 원본 WeddingCompany 객체들의 리스트를 순회합니다.
+
+    for (const company of halls) {
+      // 업체의 name 속성이 유효하다면 처리
+      if (company.name) {
+        if (!consolidatedCompanyData.has(company.name)) {
+          // 이 업체명을 처음 만났다면 Map에 새로운 항목을 생성합니다.
+          consolidatedCompanyData.set(company.name, {
+            companyInfo: company, // 이 company 객체를 해당 업체명의 대표 정보로 저장
+            allHalls: [], // 해당 업체명의 모든 홀 목록을 담을 빈 배열 초기화
+          });
+        } // 해당 업체 객체에 halls 리스트가 있고 비어있지 않다면
+
+        if (company.halls && company.halls.length > 0) {
+          // Map에 저장된 해당 업체명의 정보 객체를 가져옵니다.
+          const existingData = consolidatedCompanyData.get(company.name)!; // non-null assertion // 현재 company 객체의 모든 홀 객체들을 수집된 allHalls 목록에 추가합니다. // 스프레드 문법 (...)을 사용하여 각 홀 객체를 개별 요소로 추가합니다.
+
+          existingData.allHalls.push(...company.halls);
+        }
+      }
+    } // 이제 consolidatedCompanyData Map은 업체명별로 대표 Company 정보와 해당 업체명의 모든 홀 목록을 가지고 있습니다. // 이 데이터를 가지고 최종 필터링된 리스트를 생성합니다.
+
+    let filtered: any[] = []; // 최종적으로 필터링된 항목들을 담을 리스트 (any[] 또는 원하는 타입) // consolidatedCompanyData Map의 값들 (각각 { companyInfo, allHalls })을 순회합니다.
+    console.log("filtered", filtered);
+    for (const data of consolidatedCompanyData.values()) {
+      const representativeCompany = data.companyInfo; // 이 업체명의 대표 Company 객체 (원본)
+      const allHallsForCompany = data.allHalls; // 이 업체명의 모든 홀들의 목록 (합쳐짐) // 이 업체명에 대한 화면 표시 항목을 구성합니다. // 이 항목은 대표 Company 객체의 정보와 함께, 모든 홀 목록 (allHalls)을 포함합니다. // HallCard에서 이 항목을 받아 data.halls로 모든 홀 목록에 접근합니다.
+
+      const entry = {
+        // 대표 Company 객체의 모든 속성을 그대로 복사합니다.
+        // 이렇게 하면 원본 Company 객체의 모든 top-level 필드와 관계들이 유지됩니다.
+        ...representativeCompany, // 핵심: 원본 halls 리스트를, 해당 업체명의 모든 홀들을 합친 리스트로 덮어씁니다. // HallCard에서는 data.halls로 이 합쳐진 목록에 접근하게 됩니다.
+
+        halls: allHallsForCompany, // 합쳐진 모든 홀 목록을 할당 // 필요한 다른 Company 필드가 있다면 여기에 추가...
+      }; // 홀 정보가 하나라도 있는 업체만 최종 리스트에 포함합니다.
+
+      if (entry.halls && entry.halls.length > 0) {
+        filtered.push(entry); // 가공된 항목을 최종 필터링된 리스트에 추가
+      }
+    } // --- 3. 기존 필터 적용 (업체명 중복이 제거되고 홀 목록이 합쳐진 리스트에 대해) --- // 이제 'filtered' 리스트의 각 항목은 업체명 중복이 제거된 Company 객체 (홀 목록은 합쳐짐)입니다. // 기존 필터들은 이 리스트에 대해 적용됩니다. // 검색어 필터 (업체명 또는 합쳐진 모든 홀 이름 목록 기준)
 
     if (appliedSearchTerm.trim() !== "") {
       const lowerSearchTerm = appliedSearchTerm.toLowerCase().trim();
       filtered = filtered.filter((company) => {
         const companyNameMatch = company.name
           ?.toLowerCase()
-          .includes(lowerSearchTerm);
-        const hallNameMatch = company.selected_hall?.name
-          ?.toLowerCase()
-          .includes(lowerSearchTerm);
-        return companyNameMatch || hallNameMatch;
+          .includes(lowerSearchTerm); // company.halls (합쳐진 홀 목록) 내의 어떤 홀 이름이라도 검색어에 일치하는지 확인
+
+        const anyHallNameMatch = company.halls?.some((hall: any) =>
+          hall.name?.toLowerCase().includes(lowerSearchTerm)
+        );
+
+        return companyNameMatch || anyHallNameMatch; // 업체명 또는 어떤 홀 이름이라도 일치 시 포함
       });
-    } else {
-      filtered = filtered.filter((company) => company.selected_hall !== null);
+    } // 지역 필터 (업체 주소 기준) - 이 필터는 변경 불필요
 
-      if (selectedRegion && selectedRegion !== "전체") {
-        filtered = filtered.filter((company) => {
-          const address = company.address || "";
-          const regionMatch = address.includes(selectedRegion);
+    if (selectedRegion && selectedRegion !== "전체") {
+      filtered = filtered.filter((company) => {
+        const address = company.address || "";
+        const regionMatch = address.includes(selectedRegion);
 
-          if (
-            regionMatch &&
-            selectedSubRegion &&
-            selectedSubRegion !== "전체"
-          ) {
-            return address.includes(selectedSubRegion);
-          }
+        if (regionMatch && selectedSubRegion && selectedSubRegion !== "전체") {
+          return address.includes(selectedSubRegion);
+        }
 
-          return regionMatch;
-        });
-      }
+        return regionMatch;
+      });
+    } // 웨딩 타입 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 타입에 일치하는 경우)
 
-      if (selectedWeddingType && selectedWeddingType !== "전체") {
-        filtered = filtered.filter((company) => {
-          return company.selected_hall?.type === selectedWeddingType;
-        });
-      }
+    if (selectedWeddingType && selectedWeddingType !== "전체") {
+      filtered = filtered.filter((company) => {
+        // company.halls (합쳐진 홀 목록) 내의 어떤 홀이라도 해당 타입에 일치하는지 확인
+        console.log("zzz", selectedWeddingType);
+        return company.halls?.some(
+          (hall: any) => hall.type === selectedWeddingType
+        );
+      });
+    } // 꽃 장식 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 분위기에 일치하는 경우)
 
-      if (selectedFlower && selectedFlower !== "전체") {
-        filtered = filtered.filter((company) => {
-          return company.selected_hall?.mood === selectedFlower;
-        });
-      }
-    }
+    // if (selectedFlower && selectedFlower !== "전체") {
+    //   filtered = filtered.filter((company) => {
+    //     // company.halls (합쳐진 홀 목록) 내의 어떤 홀이라도 해당 분위기에 일치하는지 확인
+    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
+    //   });
+    // } // 최종 'filtered' 리스트는 업체명 중복이 제거되고 모든 필터 조건에 맞는 Company 객체들입니다. // 각 Company 객체의 'halls' 속성은 해당 업체명의 모든 홀들을 합친 목록입니다.
 
-    return filtered;
+    return filtered; // 가공된 리스트 반환
   }, [
-    halls,
-    appliedSearchTerm,
-    selectedRegion,
-    selectedSubRegion,
-    selectedWeddingType,
-    selectedFlower,
-  ]);
+    halls, // halls 상태 변경 시 useMemo 재실행
+    appliedSearchTerm, // 재실행 의존성
+    selectedRegion, // 재실행 의존성
+    selectedSubRegion, // 재실행 의존성
+    selectedWeddingType, // 재실행 의존성
+    selectedFlower, // 꽃 장식 필터 변경 시 재실행
+  ]); // useMemo 의존성 배열 // 검색 버튼 핸들러
 
   const handleSearch = () => {
     setAppliedSearchTerm(searchTerm);
@@ -143,7 +200,7 @@ export default function Halltour() {
 
   return (
     <div className="mt-[80px] w-full ">
-      {/* 검색창 부분 */}{" "}
+      {/* 검색창 부분 */} {/* ... (검색창 JSX) ... */}{" "}
       <div className="w-full sm:w-[1400px] max-w-full h-[90px] px-4 mb-5 sm:px-[80px] mx-auto flex flex-col items-center justify-center bg-white">
         {" "}
         <div className="w-full sm:w-[500px] h-[50px] border border-gray-300 rounded-full flex items-center">
@@ -216,10 +273,10 @@ export default function Halltour() {
           {/* ✅ 로딩 상태 조건부 렌더링 */}{" "}
           {isLoading ? (
             <div className="w-full h-64 flex flex-col items-center justify-center gap-4">
-              {/* 로딩 스피너 */}
+              {/* 로딩 스피너 */}{" "}
               <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-              {/* 텍스트 */}
-              <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>
+              {/* 텍스트 */}{" "}
+              <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>{" "}
             </div>
           ) : error ? (
             // 에러 상태

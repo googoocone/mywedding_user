@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <div className="w-full h-[500px] flex flex-col items-center justify-center px-5">
+    <div className="w-full h-[200px] sm:h-[500px] flex flex-col items-center justify-center px-5">
       <div className="w-full sm:w-[1250px] h-[200px] flex flex-col items-start justify-start gap-[2px] border-t-gray-300 border-t text-[14px] text-gray-500">
         <div className="mt-10 font-semibold">마이웨딩다이어리</div>
         <div>

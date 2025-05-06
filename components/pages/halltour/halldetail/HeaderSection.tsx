@@ -1,12 +1,22 @@
-export default function HeaderSection({ data }: any) {
+export default function HeaderSection({
+  name,
+  address,
+}: {
+  name: string;
+  address: string;
+}) {
+  const new_address = address.split(" ");
+  if (new_address[0] == "서울특별시") {
+    new_address[0] = "서울";
+  }
+
   return (
-    <div className="w-full flex flex-col items-start justify-center">
-      <div className="text-xl font-medium text-gray-500 mb-2">
-        {data.locationType[0] + data.locationType[1]}
+    <div className="w-full flex flex-col items-start justify-center mt-5 px-3 sm:px-0">
+      <div className="sm:text-xl font-medium text-gray-500 mb-2">
+        {new_address[0] + " " + new_address[1]}
       </div>
-      <div className="text-3xl font-bold mb-2">{data.name}</div>
-      <div className="text-sm text-gray-500 mb-4">{data.description}</div>
-      <div className=" w-full border-b border-gray-400 mb-4"></div>
+      <div className="text-2xl sm:text-3xl font-bold mb-2">{name}</div>
+      <div className=" w-full border-b border-gray-400 my-4"></div>
     </div>
   );
 }
