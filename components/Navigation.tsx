@@ -21,7 +21,6 @@ export default function Navigation() {
   const [isMenu, setIsMenu] = useState(false);
   const { user }: any = useContext(AuthContext);
   const { setUser }: any = useContext(AuthContext);
-  console.log("user", user);
 
   return (
     <>

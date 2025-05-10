@@ -12,7 +12,7 @@ export default function EtcSection({
 
   return (
     <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
-      <div className="text-2xl font-[600] mb-4">기타 정보</div>
+      <div className="text-2xl font-[600] mb-4">계약금 및 기타 정보</div>
       <div className="w-full flex items-center justify-center">
         <div className="w-full flex flex-col items-start gap-4">
           <div className="w-full flex items-center justify-between">

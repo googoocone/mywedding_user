@@ -16,7 +16,6 @@ export default function HeaderSection({
         {new_address[0] + " " + new_address[1]}
       </div>
       <div className="text-2xl sm:text-3xl font-bold mb-2">{name}</div>
-      <div className=" w-full border-b border-gray-400 my-4"></div>
     </div>
   );
 }

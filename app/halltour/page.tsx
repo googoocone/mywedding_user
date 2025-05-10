@@ -11,13 +11,7 @@ import { useState, useEffect, useMemo } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
 import { GiSettingsKnobs } from "react-icons/gi";
 import { useWeddingFilterStore } from "@/store/useWeddingFilterStore";
-// 백엔드 응답 구조에 맞는 인터페이스 임포트 (필요하다면 정확히 정의하여 사용)
-// interface HallPhoto { id: number; url: string; ... }
-// interface Estimate { id: number; hall_price: number; ... meal_prices: MealPrice[]; ... }
-// interface HallInclude { id: number; category: string; ... }
-// interface Hall { id: number; name: string; ... hall_photos: HallPhoto[]; estimates: Estimate[]; hall_includes: HallInclude[]; ... }
-// interface WeddingCompany { id: number; name: string; address: string; ... halls: Hall[]; ... }
-// import { WeddingCompany } from "@/interface/weddingData"; // 예시: 정확한 타입 임포트
+
 import MobileHallFilter from "@/components/pages/halltour/MobileHallFilter";
 
 const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논현", "w웨딩"];
@@ -72,7 +66,6 @@ export default function Halltour() {
         } // ✅ 백엔드에서 가져온 데이터는 업체 객체들의 리스트입니다. // 각 업체 객체는 모든 홀과 관련 정보를 halls 리스트 형태로 가집니다.
 
         const data: any[] = await response.json(); // 데이터 구조는 제공해주신 JSON 예시와 같습니다.
-        console.log("halls_data", data);
         setHalls(data); // 원본 데이터 그대로 상태에 저장
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
@@ -121,7 +114,6 @@ export default function Halltour() {
     } // 이제 consolidatedCompanyData Map은 업체명별로 대표 Company 정보와 해당 업체명의 모든 홀 목록을 가지고 있습니다. // 이 데이터를 가지고 최종 필터링된 리스트를 생성합니다.
 
     let filtered: any[] = []; // 최종적으로 필터링된 항목들을 담을 리스트 (any[] 또는 원하는 타입) // consolidatedCompanyData Map의 값들 (각각 { companyInfo, allHalls })을 순회합니다.
-    console.log("filtered", filtered);
     for (const data of consolidatedCompanyData.values()) {
       const representativeCompany = data.companyInfo; // 이 업체명의 대표 Company 객체 (원본)
       const allHallsForCompany = data.allHalls; // 이 업체명의 모든 홀들의 목록 (합쳐짐) // 이 업체명에 대한 화면 표시 항목을 구성합니다. // 이 항목은 대표 Company 객체의 정보와 함께, 모든 홀 목록 (allHalls)을 포함합니다. // HallCard에서 이 항목을 받아 data.halls로 모든 홀 목록에 접근합니다.
@@ -170,7 +162,6 @@ export default function Halltour() {
     if (selectedWeddingType && selectedWeddingType !== "전체") {
       filtered = filtered.filter((company) => {
         // company.halls (합쳐진 홀 목록) 내의 어떤 홀이라도 해당 타입에 일치하는지 확인
-        console.log("zzz", selectedWeddingType);
         return company.halls?.some(
           (hall: any) => hall.type === selectedWeddingType
         );

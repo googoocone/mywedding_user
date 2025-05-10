@@ -92,7 +92,7 @@ export default function PhotoSection({
         )}
 
         <button
-          className="absolute bottom-6 right-6 px-4 py-2 bg-gray-100 hover:bg-gray-200 hover:shadow-lg text-black text-sm border-black rounded-md gap-2 flex items-center z-5" // z-10 추가하여 이미지 위에 표시되도록
+          className="absolute bottom-6 right-6 px-4 py-2 bg-gray-100 hover:bg-gray-200 hover:shadow-lg text-black text-sm border-black rounded-md gap-2 flex items-center z-5 cursor-pointer" // z-10 추가하여 이미지 위에 표시되도록
           onClick={onShowAllPhotos} // 부모 함수 호출
         >
           <AiOutlineUnorderedList />

@@ -9,9 +9,8 @@ export default function HallCard({ data }: { data: any }) {
 
   // HallCard 클릭 시 상세 페이지로 이동하는 함수
   const handleClick = () => {
-    const companyId = data.id; // ✅ Company 객체의 id를 가져와 업체 ID로 사용합니다.
-    const targetUrl = `/halltour/${companyId}`;
-    console.log(`Navigating to: ${targetUrl}`); // 디버그용 출력
+    const companyName = data.name; // ✅ Company 객체의 id를 가져와 업체 ID로 사용합니다.
+    const targetUrl = `/halltour/${companyName}`;
 
     router.push(targetUrl); // 해당 URL로 페이지 이동
   };
