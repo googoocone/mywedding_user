@@ -8,7 +8,7 @@ export default function KakaoCallback() {
   const { fetchUser }: any = useContext(AuthContext);
   useEffect(() => {
     const code = new URL(window.location.href).searchParams.get("code");
-    console.log("code", code);
+
     if (code) {
       fetch("http://localhost:8000/auth/kakao/token", {
         method: "POST",

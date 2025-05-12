@@ -7,8 +7,7 @@ export default function EtcSection({
   penalty_detail: string;
   etc: string;
 }) {
-  console.log("penalty_amount", penalty_amount);
-  console.log("etc", etc);
+
 
   return (
     <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">

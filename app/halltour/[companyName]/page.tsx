@@ -26,6 +26,8 @@ export default function HallDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
 
+  console.log("hall", hall);
+
   // Fetch and merge data
   useEffect(() => {
     const fetchDetailWeddingHall = async () => {
@@ -283,7 +285,11 @@ export default function HallDetailPage() {
               </div>
             </div>
           </div>
-          <Calculator></Calculator>
+          <Calculator
+            estimate={
+              selectedEstimate
+            } /* guarantee 인원수 전달 시: guarantees={selectedHall?.guarantees} */
+          />
         </div>
       </div>
 
