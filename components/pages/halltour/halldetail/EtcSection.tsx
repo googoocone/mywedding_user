@@ -7,8 +7,6 @@ export default function EtcSection({
   penalty_detail: string;
   etc: string;
 }) {
-
-
   return (
     <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
       <div className="text-2xl font-[600] mb-4">계약금 및 기타 정보</div>
@@ -37,7 +35,8 @@ export default function EtcSection({
             <div className="w-[120px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
               기타 내용
             </div>
-            <div className="w-[650px] pl-[20px] flex flex-wrap items-center justify-start gap-2 text-gray-700">
+            {/* ↓↓↓ 여기에 whitespace-pre-line 클래스 추가 ↓↓↓ */}
+            <div className="w-[650px] pl-[20px] text-gray-700 whitespace-pre-line">
               {etc || "정보 없음"}
             </div>
           </div>

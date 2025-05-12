@@ -74,7 +74,7 @@ export default function OptionSection({
                   </div>
 
                   <div className="hidden sm:block sm:w-[335px] text-gray-700">
-                    {item.description || "설명 정보 없음"}{" "}
+                    {item.description || "-"}{" "}
                   </div>
                 </div>
               </div>
