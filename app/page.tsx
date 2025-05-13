@@ -1,6 +1,7 @@
+"use client";
+
 import Slider from "@/components/common/Slider";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import Motion from "@/components/pages/home/motion";
 import DynamicTitle from "@/components/pages/home/dynamicTitle";
 import SearchBar from "@/components/common/SearchBar";

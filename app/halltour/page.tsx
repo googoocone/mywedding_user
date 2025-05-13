@@ -191,11 +191,9 @@ export default function Halltour() {
 
   return (
     <div className="mt-[80px] w-full ">
-      {/* 검색창 부분 */} {/* ... (검색창 JSX) ... */}{" "}
+      {/* 검색창 부분 */} {/* ... (검색창 JSX) ... */}
       <div className="w-full sm:w-[1400px] max-w-full h-[90px] px-4 mb-5 sm:px-[80px] mx-auto flex flex-col items-center justify-center bg-white">
-        {" "}
         <div className="w-full sm:w-[500px] h-[50px] border border-gray-300 rounded-full flex items-center">
-          {" "}
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -205,101 +203,96 @@ export default function Halltour() {
             className="flex-1 h-full rounded-full focus:outline-none pl-4"
             placeholder="웨딩홀을 입력해주세요"
             type="text"
-          />{" "}
+          />
           <AiOutlineSearch
             onClick={handleSearch}
             className="text-xl mr-4 cursor-pointer"
-          />{" "}
-        </div>{" "}
+          />
+        </div>
         <div className="w-full sm:w-[500px] h-[40px] flex items-center justify-center overflow-hidden mx-auto gap-1">
-          {" "}
           <div className="text-[10px] xs:text-[12px] sm:text-[14px] text-black/80 font-semibold px-1">
-            인기 검색어{" "}
-          </div>{" "}
+            인기 검색어
+          </div>
           {hotKeywords.map((item, index) => (
             <div
               key={index}
               className="text-[10px] xs:text-[12px] sm:text-[14px] text-gray-500 px-1"
             >
-              {item}{" "}
+              {item}
             </div>
-          ))}{" "}
-        </div>{" "}
+          ))}
+        </div>
       </div>
       {/* 슬라이드 부분 */}
-      <HallSwiper /> {/* 모바일 필터 버튼 */}{" "}
+      <HallSwiper /> {/* 모바일 필터 버튼 */}
       <button
         onClick={() => setMobileFilterOpen(true)}
         className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
       >
-        <GiSettingsKnobs /> 필터{" "}
+        <GiSettingsKnobs /> 필터
       </button>
-      {/* 모바일 필터 모달 */}{" "}
+      {/* 모바일 필터 모달 */}
       {mobileFilterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          {" "}
           <div className="bg-white w-full max-w-md p-4 rounded-lg relative">
-            {" "}
             <button
               onClick={() => setMobileFilterOpen(false)}
               className="absolute top-2 right-2 text-xl font-bold"
             >
-              ×{" "}
-            </button>{" "}
-            <MobileHallFilter onClose={() => setMobileFilterOpen(false)} />{" "}
-          </div>{" "}
+              ×
+            </button>
+            <MobileHallFilter onClose={() => setMobileFilterOpen(false)} />
+          </div>
         </div>
       )}
-      {/* 컨텐츠 부분 */}{" "}
+      {/* 컨텐츠 부분 */}
       <div className="w-[1400px] mt-8 max-w-full flex items-start justify-center mx-auto ">
-        {/* 좌측 필터 영역 */}{" "}
+        {/* 좌측 필터 영역 */}
         <div className="w-[270px] max-h-[calc(100vh-120px)] scrollbar-hidden overflow-y-auto hidden sm:block sticky top-[100px] self-start">
-          {" "}
           <div>
-            <HallFilter />{" "}
-          </div>{" "}
+            <HallFilter />
+          </div>
         </div>
-        {/* 메인 콘텐츠 영역 */}{" "}
+        {/* 메인 콘텐츠 영역 */}
         <div className="w-[750px] flex flex-wrap items-center justify-start ml-2 gap-5">
-          {/* ✅ 로딩 상태 조건부 렌더링 */}{" "}
+          {/* ✅ 로딩 상태 조건부 렌더링 */}
           {isLoading ? (
             <div className="w-full h-64 flex flex-col items-center justify-center gap-4">
-              {/* 로딩 스피너 */}{" "}
+              {/* 로딩 스피너 */}
               <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-              {/* 텍스트 */}{" "}
-              <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>{" "}
+              {/* 텍스트 */}
+              <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>
             </div>
           ) : error ? (
             // 에러 상태
             <div className="w-full h-64 flex items-center justify-center">
-              {" "}
-              <p className="text-red-500 text-xl">오류 발생: {error}</p>{" "}
+              <p className="text-red-500 text-xl">오류 발생: {error}</p>
             </div>
           ) : (
             // 데이터 로딩 완료 후 (오류 없을 때)
             <>
-              {/* 데이터가 없을 때 */}{" "}
+              {/* 데이터가 없을 때 */}
               {filteredWeddingHalls.length === 0 && (
                 <div className="w-full h-64 flex items-center justify-center">
-                  <p>조건에 맞는 웨딩홀이 없습니다.</p>{" "}
+                  <p>조건에 맞는 웨딩홀이 없습니다.</p>
                 </div>
               )}
-              {/* 필터링된 데이터 목록 표시 */}{" "}
+              {/* 필터링된 데이터 목록 표시 */}
               {filteredWeddingHalls.length > 0 &&
                 filteredWeddingHalls.map(
                   (
                     company // ✅ HallCard에 CompanyWithOneHallOut 객체 전달
                   ) => <HallCard key={company.id} data={company} />
-                )}{" "}
+                )}
             </>
-          )}{" "}
+          )}
         </div>
-        {/* 우측 viewed */}{" "}
+        {/* 우측 viewed */}
         <div className="hidden md:flex">
           <div className="w-[250px] sticky top-0 self-start "></div>
-          <div className="flex-1 h-[3000px] "></div>{" "}
-        </div>{" "}
-      </div>{" "}
+          <div className="flex-1 h-[3000px] "></div>
+        </div>
+      </div>
     </div>
   );
 }
