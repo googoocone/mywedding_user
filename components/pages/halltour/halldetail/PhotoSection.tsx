@@ -3,8 +3,6 @@
 // useState 제거 (부모에서 관리)
 // import { useState } from "react";
 
-import { CiShare1 } from "react-icons/ci";
-import { CiHeart } from "react-icons/ci";
 import { AiOutlineUnorderedList } from "react-icons/ai";
 
 import Image from "next/image";

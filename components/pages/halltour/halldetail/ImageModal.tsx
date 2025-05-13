@@ -100,30 +100,30 @@ export default function ImageModal({
   }, [handleKeyDown]);
 
   // 인접 이미지 프리로딩 (선택적)
-  useEffect(() => {
-    if (photos && photos.length > 1 && typeof window !== "undefined") {
-      const preloadImage = (index: number) => {
-        const photo = photos[index];
-        if (photo && typeof photo.url === "string") {
-          // StaticImageData가 아닌 외부 URL만
-          const img = new window.Image();
-          img.src = photo.url;
-        }
-      };
-      const nextPhotoIndex = (currentIndex + 1) % photos.length;
-      preloadImage(nextPhotoIndex);
+  // useEffect(() => {
+  //   if (photos && photos.length > 1 && typeof window !== "undefined") {
+  //     const preloadImage = (index: number) => {
+  //       const photo = photos[index];
+  //       if (photo && typeof photo.url === "string") {
+  //         // StaticImageData가 아닌 외부 URL만
+  //         const img = new window.Image();
+  //         img.src = photo.url;
+  //       }
+  //     };
+  //     const nextPhotoIndex = (currentIndex + 1) % photos.length;
+  //     preloadImage(nextPhotoIndex);
 
-      if (photos.length > 1) {
-        // 항상 이전 이미지가 존재 (순환)
-        const prevPhotoIndex =
-          (currentIndex - 1 + photos.length) % photos.length;
-        if (prevPhotoIndex !== nextPhotoIndex) {
-          // 사진이 2장일 때 중복 로드 방지
-          preloadImage(prevPhotoIndex);
-        }
-      }
-    }
-  }, [currentIndex, photos]);
+  //     if (photos.length > 1) {
+  //       // 항상 이전 이미지가 존재 (순환)
+  //       const prevPhotoIndex =
+  //         (currentIndex - 1 + photos.length) % photos.length;
+  //       if (prevPhotoIndex !== nextPhotoIndex) {
+  //         // 사진이 2장일 때 중복 로드 방지
+  //         preloadImage(prevPhotoIndex);
+  //       }
+  //     }
+  //   }
+  // }, [currentIndex, photos]);
 
   // photos가 없거나, 비어있거나, 현재 인덱스의 사진이 없으면 렌더링하지 않음
   if (!photos || photos.length === 0 || !photos[currentIndex]) {
@@ -161,7 +161,7 @@ export default function ImageModal({
         </button>
 
         {/* 이미지 표시 영역: 부모 div에 position:relative와 크기 지정 */}
-        <div className="relative flex items-center justify-center w-[90vw] h-[calc(100vh-120px)] sm:w-[95vw] sm:h-[calc(100vh-100px)]">
+        <div className="relative flex items-center justify-center ">
           {isImageLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-gray-600 border-t-white rounded-full animate-spin"></div>
@@ -177,9 +177,9 @@ export default function ImageModal({
             }
             src={currentPhoto.url}
             alt={currentPhoto.caption || `사진 ${currentIndex + 1}`}
-            fill // 부모 요소에 맞춰 채움
-            sizes="(max-width: 640px) 90vw, (max-width: 1024px) 80vw, 70vw" // 최적화된 이미지 선택을 위한 힌트
-            quality={80} // 이미지 품질
+            width={1000}
+            height={1000}
+            quality={100} // 이미지 품질
             priority={isPriorityImage} // 첫 이미지 우선 로드
             placeholder={currentPhoto.blurDataURL ? "blur" : "empty"}
             blurDataURL={currentPhoto.blurDataURL}

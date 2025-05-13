@@ -173,7 +173,7 @@ export default function HallDetailPage() {
   const currentHall = useMemo(() => {
     return allHalls.find((h) => h.name === hallNameFilter);
   }, [allHalls, hallNameFilter]);
-
+  console.log("current hall photos", currentHall?.hall_photos);
   const datesForHall = useMemo(() => {
     if (!currentHall) return [];
     return Array.from(new Set(currentHall.estimates.map((e) => e.date))).sort();

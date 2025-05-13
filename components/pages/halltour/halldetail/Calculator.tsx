@@ -291,14 +291,14 @@ export default function Calculator({
                   <span className="text-gray-700 text-sm font-medium">
                     {mealPrice.meal_type}
                   </span>
-                  <div className="flex sm:flex-col rlex-row">
+                  <div className=" flex sm:flex-col rlex-row">
                     <span className="text-xs text-gray-500">
                       ({formatCurrency(currentPrice)}원/{mealPrice.category})
                     </span>
 
                     {/* 할인 정보 조건부 표시 */}
                     {showDiscount && (
-                      <div className="text-xs text-red-500  font-semibold">
+                      <div className="text-xs text-red-500 ml-2 sm:ml-0  font-semibold">
                         -{formatCurrency(discountAmount)}원({discountPercent}%
                         할인)
                       </div>
@@ -306,7 +306,7 @@ export default function Calculator({
                   </div>
                 </div>
                 {/* 인원수 입력 */}
-                <div className="flex  w-full items-center justify-between mt-2">
+                <div className="flex  w-full sm:w-[210px] items-center justify-between mt-2">
                   <div className="flex items-center mx-0 sm:mx-2">
                     <input
                       type="number"

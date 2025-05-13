@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="w-full sm:w-[1250px] h-[200px] flex flex-col items-start justify-start gap-[2px] border-t-gray-300 border-t text-[14px] text-gray-500">
         <div className="mt-10 font-semibold">마이웨딩다이어리</div>
         <div>
-          <strong>대표</strong> 예비신부 노남주
+          <strong>대표</strong> 박영호호
         </div>
         <div>
           <strong>사업자번호</strong> 875-31-01047
@@ -16,7 +16,7 @@ export default function Footer() {
           <strong>전화</strong> 010-8285-5136
         </div>
         <div>
-          <strong>이메일</strong> chloenoh@naver.com
+          <strong>이메일</strong> snu910501@naver.com
         </div>
         <div className="w-full  mt-10">
           <ul className="w-full flex items-start justify-start gap-5">
