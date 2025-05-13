@@ -225,7 +225,7 @@ export default function Calculator({
 
   // --- 최종 계산기 UI 반환 ---
   return (
-    <div className="w-[400px] min-h-[500px] rounded-xl border border-gray-400 mt-4 p-5 flex flex-col bg-white shadow-md">
+    <div className="w-full sm:w-[400px] min-h-[500px] rounded-xl border border-gray-400 mt-4 p-5 flex flex-col bg-white shadow-md">
       {/* 계산기 헤더 */}
       <div className="w-full flex items-center justify-between text-2xl mb-2">
         <div className="font-semibold text-gray-800">견적서 계산기</div>
@@ -285,51 +285,49 @@ export default function Calculator({
 
           return (
             <div key={mealPrice.id} className="bg-gray-50 p-3 rounded-lg mb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center items-start">
                 {/* 식대 정보 */}
                 <div className="flex-1">
                   <span className="text-gray-700 text-sm font-medium">
                     {mealPrice.meal_type}
                   </span>
-                  <div>
+                  <div className="flex sm:flex-col rlex-row">
                     <span className="text-xs text-gray-500">
                       ({formatCurrency(currentPrice)}원/{mealPrice.category})
                     </span>
-                    {/* {mealPrice.extra && (
-                      <span className="text-xs text-blue-600  font-medium">
-                        ({mealPrice.extra})
-                      </span>
-                    )} */}
+
                     {/* 할인 정보 조건부 표시 */}
                     {showDiscount && (
                       <div className="text-xs text-red-500  font-semibold">
-                        ({formatCurrency(discountAmount)}원 / {discountPercent}%
+                        -{formatCurrency(discountAmount)}원({discountPercent}%
                         할인)
                       </div>
                     )}
                   </div>
                 </div>
                 {/* 인원수 입력 */}
-                <div className="flex items-center mx-2">
-                  <input
-                    type="number"
-                    min="0"
-                    value={mealCounts[mealPrice.id] || 0}
-                    onChange={(e) =>
-                      handleMealCountChange(mealPrice.id, e.target.value)
-                    }
-                    className="w-16 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff767b]"
-                    aria-label={`${mealPrice.category} 인원수`}
-                  />
-                  <span className="text-sm text-gray-600 ml-1">명</span>
+                <div className="flex  w-full items-center justify-between mt-2">
+                  <div className="flex items-center mx-0 sm:mx-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={mealCounts[mealPrice.id] || 0}
+                      onChange={(e) =>
+                        handleMealCountChange(mealPrice.id, e.target.value)
+                      }
+                      className="w-16 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff767b]"
+                      aria-label={`${mealPrice.category} 인원수`}
+                    />
+                    <span className="text-sm text-gray-600 ml-1">명</span>
+                  </div>
+                  {/* 소계 */}
+                  <span className="font-semibold text-gray-900 w-28 text-right">
+                    {formatCurrency(
+                      (mealCounts[mealPrice.id] || 0) * currentPrice
+                    )}{" "}
+                    원
+                  </span>
                 </div>
-                {/* 소계 */}
-                <span className="font-semibold text-gray-900 w-28 text-right">
-                  {formatCurrency(
-                    (mealCounts[mealPrice.id] || 0) * currentPrice
-                  )}{" "}
-                  원
-                </span>
               </div>
             </div>
           );

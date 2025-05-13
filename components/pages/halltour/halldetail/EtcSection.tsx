@@ -31,12 +31,12 @@ export default function EtcSection({
             </div>
           </div>
 
-          <div className="w-full flex items-center justify-between">
+          <div className="w-full flex flex-col sm:flex-row  items-center justify-between">
             <div className="w-[120px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
               기타 내용
             </div>
             {/* ↓↓↓ 여기에 whitespace-pre-line 클래스 추가 ↓↓↓ */}
-            <div className="w-[650px] pl-[20px] text-gray-700 whitespace-pre-line">
+            <div className="w-full sm:w-[650px] sm:pl-[20px] mt-4 sm:mt-0 text-gray-700 whitespace-pre-line">
               {etc || "정보 없음"}
             </div>
           </div>

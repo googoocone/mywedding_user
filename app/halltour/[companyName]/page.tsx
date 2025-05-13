@@ -4,13 +4,15 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import PhotoSection from "@/components/pages/halltour/halldetail/PhotoSection";
 import ImageModal from "@/components/pages/halltour/halldetail/ImageModal";
-import Calculator from "@/components/pages/halltour/halldetail/Calculator";
+import Calculator from "@/components/pages/halltour/halldetail/Calculator"; // Calculator.tsx의 경로는 실제 프로젝트에 맞게 조정해주세요.
 import HeaderSection from "@/components/pages/halltour/halldetail/HeaderSection";
 import BasicInfoSection from "@/components/pages/halltour/halldetail/BasicInfoSection";
 import IncludedSection from "@/components/pages/halltour/halldetail/IncludedSection";
 import OptionSection from "@/components/pages/halltour/halldetail/OptionSection";
 import HallInfoSection from "@/components/pages/halltour/halldetail/HallInfoSection";
 import EtcSection from "@/components/pages/halltour/halldetail/EtcSection";
+import { CiCalculator1, CiFilter } from "react-icons/ci"; // 아이콘 추가 (CiFilter는 예시, 적절한 필터 아이콘 사용)
+import { IoClose } from "react-icons/io5"; // 닫기 아이콘
 
 // --- 타입 정의 ---
 interface MealPrice {
@@ -74,12 +76,16 @@ export default function HallDetailPage() {
 
   // --- 상태 변수 ---
   const [hallNameFilter, setHallNameFilter] = useState<string>("");
-  const [estimateTypeFilter, setEstimateTypeFilter] = useState<string>(""); // 초기값은 아래 useEffect에서 설정
-  const [dateFilter, setDateFilter] = useState<string>(""); // 초기값은 아래 useEffect에서 설정
+  const [estimateTypeFilter, setEstimateTypeFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("");
   const [hallCompany, setHallCompany] = useState<HallCompany | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
+
+  // 모바일 하단 패널 표시를 위한 상태 변수
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
   // --- 데이터 로딩 ---
   useEffect(() => {
@@ -92,7 +98,6 @@ export default function HallDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // encodeURIComponent 제거된 URL
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_detail_wedding_hall/${companyName}`,
           {
@@ -154,59 +159,49 @@ export default function HallDetailPage() {
   // --- 파생 상태 및 필터 로직 ---
   const allHalls: Hall[] = hallCompany?.halls || [];
 
-  // 1. 홀 이름 목록 및 기본 홀 이름 설정
   const hallNames = useMemo(
     () => Array.from(new Set(allHalls.map((h) => h.name))),
     [allHalls]
   );
+
   useEffect(() => {
     if (!isLoading && allHalls.length > 0 && !hallNameFilter) {
-      // 최초 로딩 시 또는 hallNameFilter가 비었을 때
       setHallNameFilter(allHalls[0].name);
     }
   }, [isLoading, allHalls, hallNameFilter]);
 
-  // 2. 현재 선택된 홀 객체
   const currentHall = useMemo(() => {
     return allHalls.find((h) => h.name === hallNameFilter);
   }, [allHalls, hallNameFilter]);
 
-  // 3. 현재 홀의 예약 가능 날짜 목록 (모든 날짜)
   const datesForHall = useMemo(() => {
     if (!currentHall) return [];
     return Array.from(new Set(currentHall.estimates.map((e) => e.date))).sort();
   }, [currentHall]);
 
-  // 4. 홀 변경 시 또는 날짜 목록 변경 시 -> 날짜 필터 기본값 설정
   useEffect(() => {
     if (currentHall) {
-      // 홀이 선택되었을 때만
       if (datesForHall.length > 0) {
-        // 현재 dateFilter가 유효한 날짜 목록에 없거나, 설정되지 않았다면
         if (!dateFilter || !datesForHall.includes(dateFilter)) {
-          // admin 견적이 있는 날짜를 우선으로 찾아 설정
           const adminDate = datesForHall.find((d) =>
             currentHall.estimates.some(
               (e) => e.date === d && e.type === "admin"
             )
           );
-          setDateFilter(adminDate || datesForHall[0]); // admin 날짜 없으면 첫 번째 날짜로
+          setDateFilter(adminDate || datesForHall[0]);
         }
       } else {
-        setDateFilter(""); // 선택 가능한 날짜가 없으면 빈 값
+        setDateFilter("");
       }
     }
-  }, [currentHall, datesForHall]); // currentHall 또는 datesForHall 변경시 실행
+  }, [currentHall, datesForHall, dateFilter]);
 
-  // 5. 현재 홀 & 선택된 날짜에 따른 견적서 종류 버튼 목록 (standard 우선)
   const estimateTypesForDateButtons: string[] = useMemo(() => {
-    if (!currentHall) return []; // 홀 없으면 빈 배열
+    if (!currentHall) return [];
     const types: Set<string> = new Set();
-    // 홀에 standard 견적서가 있는지 확인 (날짜 무관)
     if (currentHall.estimates.some((e) => e.type === "standard")) {
       types.add("standard");
     }
-    // 선택된 날짜에 admin 견적서가 있는지 확인
     if (
       dateFilter &&
       currentHall.estimates.some(
@@ -215,48 +210,38 @@ export default function HallDetailPage() {
     ) {
       types.add("admin");
     }
-    // standard가 먼저 오도록 정렬
     return Array.from(types).sort((a, b) => {
       if (a === "standard") return -1;
       if (b === "standard") return 1;
-      return 0; // 나머지는 순서 유지 (admin만 남음)
+      return 0;
     });
   }, [currentHall, dateFilter]);
 
-  // 6. 견적서 종류 버튼 목록 변경 시 -> 견적서 종류 필터 기본값 설정
   useEffect(() => {
     if (currentHall) {
-      // 현재 선택된 홀이 있을 때만 로직 실행
       if (estimateTypesForDateButtons.length > 0) {
-        // 현재 설정된 estimateTypeFilter가 여전히 유효한 선택지인지 확인
         const isCurrentTypeValid =
           estimateTypesForDateButtons.includes(estimateTypeFilter);
-
-        // 현재 타입이 유효하지 않거나, 아직 타입이 설정되지 않았다면 기본값으로 설정
         if (!estimateTypeFilter || !isCurrentTypeValid) {
           if (estimateTypesForDateButtons.includes("admin")) {
-            setEstimateTypeFilter("admin"); // admin이 가능하면 admin을 기본으로
+            setEstimateTypeFilter("admin");
           } else if (estimateTypesForDateButtons.includes("standard")) {
-            setEstimateTypeFilter("standard"); // admin 없고 standard만 있으면 standard를 기본으로
+            setEstimateTypeFilter("standard");
           } else {
-            // 이 경우는 거의 없겠지만, 목록에 다른 타입만 있다면 첫 번째 것으로 설정
             setEstimateTypeFilter(estimateTypesForDateButtons[0]);
           }
         }
-        // 이미 유효한 타입이 설정되어 있다면 (사용자가 직전에 클릭한 경우 등), 그 선택을 유지한다.
-        // (별도의 setEstimateTypeFilter 호출 없음)
       } else {
-        // 선택 가능한 견적서 타입이 아예 없으면 estimateTypeFilter를 비운다.
         setEstimateTypeFilter("");
       }
     }
-    // 이 useEffect는 currentHall이 바뀌거나, dateFilter가 바뀌어서
-    // 결과적으로 estimateTypesForDateButtons 목록이 변경되었을 때 실행되어야 한다.
-    // estimateTypeFilter 자체의 변경으로 이 useEffect가 다시 실행되어 사용자 선택을 덮어쓰는 것을 방지하기 위해
-    // 의존성 배열에서 estimateTypeFilter를 제거한다.
-  }, [currentHall, dateFilter, estimateTypesForDateButtons]); // 의존성 배열 수정
+  }, [
+    currentHall,
+    dateFilter,
+    estimateTypesForDateButtons,
+    estimateTypeFilter,
+  ]);
 
-  // 7. [핵심] 최종적으로 Calculator와 페이지에 전달할 견적서 결정
   const { standardEstimate, adminEstimate, displayEstimate } = useMemo(() => {
     if (!currentHall) {
       return {
@@ -291,6 +276,21 @@ export default function HallDetailPage() {
   const handleShowAllPhotos = () => setShowImageModal(true);
   const handleCloseModal = () => setShowImageModal(false);
 
+  const openFilterModal = () => {
+    setIsFilterModalOpen(true);
+    setIsCalculatorModalOpen(false); // 다른 모달은 닫기
+  };
+
+  const openCalculatorModal = () => {
+    setIsCalculatorModalOpen(true);
+    setIsFilterModalOpen(false); // 다른 모달은 닫기
+  };
+
+  const closeModal = () => {
+    setIsFilterModalOpen(false);
+    setIsCalculatorModalOpen(false);
+  };
+
   // --- 로딩 / 에러 / 데이터 없음 처리 ---
   if (isLoading)
     return (
@@ -313,7 +313,9 @@ export default function HallDetailPage() {
 
   // --- 렌더링 ---
   return (
-    <div className="w-full relative flex flex-col items-center justify-center">
+    <div className="w-full relative flex flex-col items-center justify-center pb-20 lg:pb-0">
+      {" "}
+      {/* 모바일 하단 버튼 공간 확보 */}
       {/* Photo Section */}
       <div className="w-full sm:w-[1250px] flex flex-col items-center justify-start">
         <PhotoSection
@@ -321,11 +323,10 @@ export default function HallDetailPage() {
           onShowAllPhotos={handleShowAllPhotos}
         />
       </div>
-
       {/* Details */}
       <div className="w-full sm:w-[1250px] flex flex-col lg:flex-row items-start justify-between">
         {/* 왼쪽 컨텐츠 */}
-        <div className="w-full lg:w-[750px] flex flex-col items-center mb-8 lg:mb-0">
+        <div className="w-full lg:w-[750px] flex flex-col items-center mb-8 lg:mb-0 px-4 sm:px-0">
           <HeaderSection
             name={hallCompany.name}
             address={hallCompany.address}
@@ -372,10 +373,9 @@ export default function HallDetailPage() {
           )}
         </div>
 
-        {/* 오른쪽 필터 & 계산기 */}
-        <div className="w-full lg:w-[400px]  mt-10 lg:mt-10">
-          {/* 필터 */}
-          <div className="bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg space-y-2 mb-4">
+        {/* 오른쪽 필터 & 계산기 (데스크톱용) */}
+        <div className="w-full lg:w-[400px] mt-10 lg:mt-10 hidden lg:block">
+          <div className="bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg space-y-2 mb-4 sticky top-4">
             {/* 홀 이름 필터 */}
             <div className="flex flex-col space-y-1">
               <span className="text-sm font-medium text-gray-700">홀 이름</span>
@@ -395,7 +395,7 @@ export default function HallDetailPage() {
                 ))}
               </div>
             </div>
-            {/* 견적서 종류 필터 (버튼 목록: estimateTypesForDateButtons, 활성 버튼: estimateTypeFilter 기준) */}
+            {/* 견적서 종류 필터 */}
             <div className="flex flex-col space-y-1">
               <span className="text-sm font-medium text-gray-700">
                 견적서 종류
@@ -448,10 +448,9 @@ export default function HallDetailPage() {
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
-                      {" "}
                       {`${year}.${
                         month < 10 ? "0" + month : month
-                      } (${weekday})`}{" "}
+                      } (${weekday})`}
                     </button>
                   );
                 })}
@@ -463,15 +462,210 @@ export default function HallDetailPage() {
               </div>
             </div>
           </div>
-          {/* 계산기 */}
-          <Calculator
-            standardEstimate={standardEstimate}
-            adminEstimate={adminEstimate}
-            selectedType={estimateTypeFilter as "standard" | "admin"} // 타입 단언
-          />
+          <div className="sticky top-[calc(4rem+180px)]">
+            {" "}
+            {/* 값은 실제 필터 높이에 따라 조정 */}
+            <Calculator
+              standardEstimate={standardEstimate}
+              adminEstimate={adminEstimate}
+              selectedType={estimateTypeFilter as "standard" | "admin"}
+            />
+          </div>
         </div>
       </div>
-
+      {/* --- 모바일 하단 고정 버튼 --- */}
+      <div className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-white border-t border-gray-200 flex z-50">
+        <button
+          onClick={openFilterModal}
+          className={`flex-1 flex flex-col items-center justify-center text-xs font-medium transition-colors ${
+            isFilterModalOpen
+              ? "text-[#ff767b]"
+              : "text-gray-700 hover:text-[#ff767b]"
+          }`}
+        >
+          <CiFilter
+            className={`w-6 h-6 mb-0.5 ${
+              isFilterModalOpen ? "text-[#ff767b]" : "text-gray-500"
+            }`}
+          />
+          필터
+        </button>
+        <div className="w-px h-full bg-gray-200"></div> {/* 구분선 */}
+        <button
+          onClick={openCalculatorModal}
+          className={`flex-1 flex flex-col items-center justify-center text-xs font-medium transition-colors ${
+            isCalculatorModalOpen
+              ? "text-[#ff767b]"
+              : "text-gray-700 hover:text-[#ff767b]"
+          }`}
+        >
+          <CiCalculator1
+            className={`w-6 h-6 mb-0.5 ${
+              isCalculatorModalOpen ? "text-[#ff767b]" : "text-gray-500"
+            }`}
+          />
+          견적 계산기
+        </button>
+      </div>
+      {/* --- 모바일 필터 모달 (하단 시트 형태) --- */}
+      {isFilterModalOpen && (
+        // 배경 클릭 시 닫기
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[110] flex items-end transition-opacity duration-300 ease-out"
+          onClick={closeModal} // 배경 클릭 시 모든 모달 닫기
+        >
+          {/* 실제 모달 컨텐츠 (이벤트 버블링 방지) */}
+          <div
+            className="w-full bg-white rounded-t-2xl p-4 pt-5 shadow-xl max-h-[85vh] overflow-y-auto transform transition-transform duration-300 ease-out translate-y-0 z-20"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: isFilterModalOpen
+                ? "translateY(0)"
+                : "translateY(100%)",
+            }} // 나타나는 애니메이션
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">필터 설정</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 p-1"
+              >
+                <IoClose size={24} />
+              </button>
+            </div>
+            {/* 홀 이름 필터 */}
+            <div className="flex flex-col space-y-1 mb-4">
+              <span className="text-sm font-medium text-gray-700">홀 이름</span>
+              <div className="flex flex-wrap gap-2 my-2">
+                {hallNames.map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => setHallNameFilter(name)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                      hallNameFilter === name
+                        ? "bg-[#ffe4de] text-[#ff767b]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* 견적서 종류 필터 */}
+            <div className="flex flex-col space-y-1 mb-4">
+              <span className="text-sm font-medium text-gray-700">
+                견적서 종류
+              </span>
+              <div className="flex flex-wrap gap-2 my-2">
+                {estimateTypesForDateButtons.map((type: string) => (
+                  <button
+                    key={type}
+                    onClick={() => setEstimateTypeFilter(type)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                      estimateTypeFilter === type
+                        ? "bg-[#ffe4de] text-[#ff767b]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {type === "standard"
+                      ? "일반 견적서"
+                      : type === "admin"
+                      ? "할인 견적서"
+                      : type}
+                  </button>
+                ))}
+                {estimateTypesForDateButtons.length === 0 && (
+                  <span className="text-xs text-gray-400">
+                    견적서 정보 없음
+                  </span>
+                )}
+              </div>
+            </div>
+            {/* 날짜 필터 */}
+            <div className="flex flex-col space-y-1">
+              <span className="text-sm font-medium text-gray-700">
+                날짜 선택
+              </span>
+              <div className="flex flex-wrap gap-2 my-2">
+                {datesForHall.map((date: string) => {
+                  const parsedDate = new Date(date);
+                  const year = parsedDate.getFullYear();
+                  const month = parsedDate.getMonth() + 1;
+                  const weekday = parsedDate.toLocaleDateString("ko-KR", {
+                    weekday: "short",
+                  });
+                  return (
+                    <button
+                      key={date}
+                      onClick={() => setDateFilter(date)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                        dateFilter === date
+                          ? "bg-[#ffe4de] text-[#ff767b]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {`${year}.${
+                        month < 10 ? "0" + month : month
+                      } (${weekday})`}
+                    </button>
+                  );
+                })}
+                {datesForHall.length === 0 && currentHall && (
+                  <span className="text-xs text-gray-400">
+                    예약 가능 날짜 정보 없음
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={closeModal}
+              className="mt-6 w-full bg-[#ff767b] text-white py-3 rounded-lg font-semibold hover:bg-[#ff5a5f] transition-colors"
+            >
+              적용하고 닫기
+            </button>
+          </div>
+        </div>
+      )}
+      {/* --- 모바일 계산기 모달 (하단 시트 형태) --- */}
+      {isCalculatorModalOpen && (
+        <div
+          className="w-full lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[100] flex items-end transition-opacity duration-300 ease-out"
+          onClick={closeModal}
+        >
+          <div
+            className="w-full bg-white rounded-t-2xl p-4 pt-5 shadow-xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 ease-out translate-y-0"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: isCalculatorModalOpen
+                ? "translateY(0)"
+                : "translateY(100%)",
+            }} // 나타나는 애니메이션
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                견적 계산기
+              </h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 p-1"
+              >
+                <IoClose size={24} />
+              </button>
+            </div>
+            {/* 계산기 컴포넌트가 w-full을 가지도록 내부 수정이 필요할 수 있음 */}
+            <div className="calculator-modal-content">
+              {" "}
+              {/* 계산기 너비 조정을 위해 추가적인 div로 감쌀 수 있음 */}
+              <Calculator
+                standardEstimate={standardEstimate}
+                adminEstimate={adminEstimate}
+                selectedType={estimateTypeFilter as "standard" | "admin"}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Image Modal */}
       {showImageModal && (
         <ImageModal

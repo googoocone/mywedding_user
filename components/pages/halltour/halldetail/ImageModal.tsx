@@ -81,33 +81,33 @@ export default function ImageModal({
   // --- 기존 코드 끝 ---
 
   // ✨ 인접 이미지 프리로딩 로직 추가 ✨
-  useEffect(() => {
-    if (photos && photos.length > 1) {
-      // 다음 이미지 미리 로드
-      const nextPhotoIndex = (currentIndex + 1) % photos.length;
-      const nextPhoto = photos[nextPhotoIndex];
-      if (nextPhoto && typeof nextPhoto.url === "string") {
-        // URL이 문자열일 때만
-        const nextImg = new window.Image();
-        nextImg.src = nextPhoto.url;
-      }
+  // useEffect(() => {
+  //   if (photos && photos.length > 1) {
+  //     // 다음 이미지 미리 로드
+  //     const nextPhotoIndex = (currentIndex + 1) % photos.length;
+  //     const nextPhoto = photos[nextPhotoIndex];
+  //     if (nextPhoto && typeof nextPhoto.url === "string") {
+  //       // URL이 문자열일 때만
+  //       const nextImg = new window.Image();
+  //       nextImg.src = nextPhoto.url;
+  //     }
 
-      // 이전 이미지 미리 로드 (만약 사진이 2장 이상이고, next와 prev가 다른 경우)
-      if (photos.length > 2) {
-        // 3장 이상일 때 이전/다음이 확실히 다름. 2장이면 이전/다음이 같을 수 있음.
-        const prevPhotoIndex =
-          (currentIndex - 1 + photos.length) % photos.length;
-        // 다음 이미지와 이전 이미지가 같은 경우 (사진이 총 2장일 때) 중복 로드 방지
-        if (prevPhotoIndex !== nextPhotoIndex) {
-          const prevPhoto = photos[prevPhotoIndex];
-          if (prevPhoto && typeof prevPhoto.url === "string") {
-            const prevImg = new window.Image();
-            prevImg.src = prevPhoto.url;
-          }
-        }
-      }
-    }
-  }, [currentIndex, photos]); // currentIndex가 바뀌거나 photos 배열 자체가 바뀔 때 실행
+  //     // 이전 이미지 미리 로드 (만약 사진이 2장 이상이고, next와 prev가 다른 경우)
+  //     if (photos.length > 2) {
+  //       // 3장 이상일 때 이전/다음이 확실히 다름. 2장이면 이전/다음이 같을 수 있음.
+  //       const prevPhotoIndex =
+  //         (currentIndex - 1 + photos.length) % photos.length;
+  //       // 다음 이미지와 이전 이미지가 같은 경우 (사진이 총 2장일 때) 중복 로드 방지
+  //       if (prevPhotoIndex !== nextPhotoIndex) {
+  //         const prevPhoto = photos[prevPhotoIndex];
+  //         if (prevPhoto && typeof prevPhoto.url === "string") {
+  //           const prevImg = new window.Image();
+  //           prevImg.src = prevPhoto.url;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }, [currentIndex, photos]); // currentIndex가 바뀌거나 photos 배열 자체가 바뀔 때 실행
 
   const currentPhoto = photos[currentIndex];
   // 모달 첫 로드 시 현재 이미지가 초기 인덱스인지 여부 (priority 적용 위함)
