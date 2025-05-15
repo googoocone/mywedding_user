@@ -29,7 +29,7 @@ export default function MealPriceDisplay({ item }: MealPriceDisplayProps) {
         {item.category} : {/* 카테고리 텍스트와 콜론 */}
       </div>
 
-      <div className="w-[130px] xs:w-[170px] flex-grow text-right relative text-gray-700">
+      <div className="w-[100px] xs:w-[170px] flex-grow text-right relative text-gray-700">
         {item.price?.toLocaleString()}원
         {hasExtra && (
           <span

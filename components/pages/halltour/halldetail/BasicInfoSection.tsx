@@ -7,7 +7,7 @@ export default function BasicInfoSection({
   mood,
   time,
   hall_type,
-  meal_type,
+  meal_types,
   guarantee,
   parking,
   interval_minutes,
@@ -17,6 +17,7 @@ export default function BasicInfoSection({
   let cleanedStringTime = time.replace(/"/g, "");
 
   const [showTooltip, setShowTooltip] = useState(false);
+  console.log("meal_types", meal_types);
 
   return (
     <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
@@ -79,21 +80,18 @@ export default function BasicInfoSection({
               </div>
             </div>
           </div>
+
           <div className="w-full flex items-center justify-between">
-            <div className="w-[130px] xs:w-[130px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
-              식사종류
-            </div>
-            <div className="w-[275px] pl-2 sm:pl-[20px] flex flex-wrap items-center justify-start gap-2">
-              <div className="flex items-center gap-1">
-                <span>{meal_type}</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-full flex items-center justify-between">
-            <div className="w-[130px] xs:w-[130px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
+            <div className="w-[130px] xs:w-[130px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start">
               식대
             </div>
-            <div className="w-[275px] pl-2 sm:pl-[20px] flex flex-wrap items-center justify-start gap-2">
+            <div className="flex flex-col items-center justify-start gap-1">
+              {meal_types.map((item: string) => (
+                <div>{item?.meal_type}</div>
+              ))}
+            </div>
+
+            <div className="w-[155px] sm:w-[195px] pl-2 sm:pl-[20px] flex flex-wrap items-center justify-start gap-2">
               <div className="flex flex-col items-center gap-1">
                 {meal_price.map((item: any, index: any) => (
                   <MealPriceDisplay

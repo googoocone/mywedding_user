@@ -32,6 +32,8 @@ export default function ImageModal({
   const [currentIndex, setCurrentIndex] = useState(0); // 초기값은 아래 useEffect에서 설정
   const [isImageLoading, setIsImageLoading] = useState(true);
 
+  console.log("photos", photos);
+
   // photos 배열 또는 initialIndex prop 변경 시 currentIndex 및 로딩 상태 초기화
   useEffect(() => {
     if (!photos || photos.length === 0) {
@@ -180,7 +182,7 @@ export default function ImageModal({
             width={1000}
             height={1000}
             quality={100} // 이미지 품질
-            priority={isPriorityImage} // 첫 이미지 우선 로드
+            priority={true} // 첫 이미지 우선 로드
             placeholder={currentPhoto.blurDataURL ? "blur" : "empty"}
             blurDataURL={currentPhoto.blurDataURL}
             className={`object-contain transition-opacity duration-300 ${
@@ -191,6 +193,7 @@ export default function ImageModal({
               console.error("이미지 로드 실패:", currentPhoto.url, e);
               setIsImageLoading(false);
             }}
+            unoptimized={true}
           />
         </div>
 

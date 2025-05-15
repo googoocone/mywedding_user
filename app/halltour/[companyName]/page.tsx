@@ -4,15 +4,16 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import PhotoSection from "@/components/pages/halltour/halldetail/PhotoSection";
 import ImageModal from "@/components/pages/halltour/halldetail/ImageModal";
-import Calculator from "@/components/pages/halltour/halldetail/Calculator"; // Calculator.tsx의 경로는 실제 프로젝트에 맞게 조정해주세요.
+import Calculator from "@/components/pages/halltour/halldetail/Calculator";
 import HeaderSection from "@/components/pages/halltour/halldetail/HeaderSection";
 import BasicInfoSection from "@/components/pages/halltour/halldetail/BasicInfoSection";
 import IncludedSection from "@/components/pages/halltour/halldetail/IncludedSection";
 import OptionSection from "@/components/pages/halltour/halldetail/OptionSection";
 import HallInfoSection from "@/components/pages/halltour/halldetail/HallInfoSection";
 import EtcSection from "@/components/pages/halltour/halldetail/EtcSection";
-import { CiCalculator1, CiFilter } from "react-icons/ci"; // 아이콘 추가 (CiFilter는 예시, 적절한 필터 아이콘 사용)
-import { IoClose } from "react-icons/io5"; // 닫기 아이콘
+import { CiCalculator1, CiFilter } from "react-icons/ci";
+import { IoClose } from "react-icons/io5";
+import { StaticImageData } from "next/image"; // StaticImageData 타입 추가
 
 // --- 타입 정의 ---
 interface MealPrice {
@@ -42,6 +43,17 @@ interface Estimate {
   penalty_detail?: string;
   etcs?: { content: string }[];
 }
+
+// ImageModal에서 사용하는 Photo 타입을 여기서도 정의하거나 import 할 수 있습니다.
+// 여기서는 ImageModal의 Photo 인터페이스와 유사하게 가정합니다.
+interface HallPhoto {
+  id?: number | string;
+  url: string | StaticImageData; // ImageModal의 Photo 인터페이스와 일치
+  caption?: string;
+  blurDataURL?: string;
+  // 실제 데이터에 width, height가 없다면 제거
+}
+
 interface Hall {
   id: number;
   name: string;
@@ -50,7 +62,7 @@ interface Hall {
   guarantees?: number;
   interval_minutes?: number;
   parking?: number;
-  hall_photos?: any[];
+  hall_photos?: HallPhoto[]; // 타입을 HallPhoto[]로 명시
   hall_includes?: any[];
   estimates: Estimate[];
 }
@@ -82,8 +94,8 @@ export default function HallDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [areImagesPreloaded, setAreImagesPreloaded] = useState(false); // 이미지 프리로딩 완료 상태
 
-  // 모바일 하단 패널 표시를 위한 상태 변수
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
@@ -127,9 +139,20 @@ export default function HallDetailPage() {
             lat,
             ceremony_times,
           } = base;
+          // hall_photos의 타입을 HallPhoto[]로 캐스팅하거나 변환합니다.
+          // 백엔드 데이터 구조에 따라 이 부분은 조정이 필요할 수 있습니다.
           const mergedHalls: Hall[] = raw
-            .map((item) => item.halls?.[0])
+            .map((item) => {
+              const hallData = item.halls?.[0];
+              if (hallData && hallData.hall_photos) {
+                // hall_photos가 이미 HallPhoto[]와 호환되는 구조라고 가정
+                // 만약 아니라면, 여기서 HallPhoto[] 타입으로 변환 필요
+                // 예: hallData.hall_photos = hallData.hall_photos.map(p => ({ url: p.some_url_field, ... }))
+              }
+              return hallData;
+            })
             .filter(Boolean);
+
           setHallCompany({
             id,
             phone,
@@ -173,7 +196,58 @@ export default function HallDetailPage() {
   const currentHall = useMemo(() => {
     return allHalls.find((h) => h.name === hallNameFilter);
   }, [allHalls, hallNameFilter]);
-  console.log("current hall photos", currentHall?.hall_photos);
+
+  // --- 이미지 프리로딩 로직 ---
+  useEffect(() => {
+    if (
+      currentHall &&
+      currentHall.hall_photos &&
+      currentHall.hall_photos.length > 0
+    ) {
+      setAreImagesPreloaded(false); // 새 홀 선택 시 프리로딩 상태 초기화
+      let loadedImagesCount = 0;
+      const photosToPreload: HallPhoto[] = currentHall.hall_photos;
+      const totalImages = photosToPreload.length;
+
+      if (totalImages === 0) {
+        setAreImagesPreloaded(true);
+        return;
+      }
+
+      photosToPreload.forEach((photo) => {
+        // StaticImageData 타입의 url은 문자열이 아닐 수 있으므로, typeof 체크
+        if (typeof photo.url === "string") {
+          const img = new Image();
+          img.src = photo.url;
+          img.onload = () => {
+            loadedImagesCount++;
+            if (loadedImagesCount === totalImages) {
+              setAreImagesPreloaded(true);
+              // console.log("모든 홀 사진 프리로딩 완료:", currentHall.name);
+            }
+          };
+          img.onerror = () => {
+            loadedImagesCount++; // 오류 발생 시에도 카운트 증가
+            console.error("이미지 프리로딩 오류:", photo.url);
+            if (loadedImagesCount === totalImages) {
+              setAreImagesPreloaded(true);
+            }
+          };
+        } else {
+          // StaticImageData거나 URL이 문자열이 아닌 경우 (예: 이미 로드된 next/image 객체)
+          // 이 경우 브라우저 레벨의 프리로딩은 불필요하거나 다르게 처리해야 함
+          loadedImagesCount++;
+          if (loadedImagesCount === totalImages) {
+            setAreImagesPreloaded(true);
+          }
+        }
+      });
+    } else {
+      // 현재 홀에 사진이 없거나 hall_photos가 없으면 프리로딩 완료 상태로 간주
+      setAreImagesPreloaded(true);
+    }
+  }, [currentHall]); // currentHall이 바뀔 때마다 프리로딩 실행
+
   const datesForHall = useMemo(() => {
     if (!currentHall) return [];
     return Array.from(new Set(currentHall.estimates.map((e) => e.date))).sort();
@@ -273,17 +347,33 @@ export default function HallDetailPage() {
   }, [currentHall, dateFilter, estimateTypeFilter]);
 
   // --- 이벤트 핸들러 ---
-  const handleShowAllPhotos = () => setShowImageModal(true);
+  const handleShowAllPhotos = () => {
+    // 선택적으로 모든 이미지가 프리로딩될 때까지 기다리거나, 사용자에게 알림을 줄 수 있습니다.
+    // if (!areImagesPreloaded) {
+    //   alert("사진을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+    //   return;
+    // }
+    if (
+      currentHall &&
+      currentHall.hall_photos &&
+      currentHall.hall_photos.length > 0
+    ) {
+      setShowImageModal(true);
+    } else {
+      // 사진이 없을 경우의 처리 (예: 알림)
+      alert("표시할 사진이 없습니다.");
+    }
+  };
   const handleCloseModal = () => setShowImageModal(false);
 
   const openFilterModal = () => {
     setIsFilterModalOpen(true);
-    setIsCalculatorModalOpen(false); // 다른 모달은 닫기
+    setIsCalculatorModalOpen(false);
   };
 
   const openCalculatorModal = () => {
     setIsCalculatorModalOpen(true);
-    setIsFilterModalOpen(false); // 다른 모달은 닫기
+    setIsFilterModalOpen(false);
   };
 
   const closeModal = () => {
@@ -314,8 +404,6 @@ export default function HallDetailPage() {
   // --- 렌더링 ---
   return (
     <div className="w-full relative flex flex-col items-center justify-center pb-20 lg:pb-0">
-      {" "}
-      {/* 모바일 하단 버튼 공간 확보 */}
       {/* Photo Section */}
       <div className="w-full sm:w-[1250px] flex flex-col items-center justify-start">
         <PhotoSection
@@ -339,7 +427,7 @@ export default function HallDetailPage() {
                 mood={currentHall?.mood || ""}
                 time={hallCompany.ceremony_times || ""}
                 hall_type={currentHall?.type || ""}
-                meal_type={displayEstimate.meal_prices?.[0]?.meal_type || ""}
+                meal_types={displayEstimate.meal_prices || ""}
                 guarantee={currentHall?.guarantees || 0}
                 interval_minutes={currentHall?.interval_minutes || 0}
                 parking={currentHall?.parking || 0}
@@ -464,7 +552,6 @@ export default function HallDetailPage() {
           </div>
           <div className="sticky top-[calc(4rem+180px)]">
             {" "}
-            {/* 값은 실제 필터 높이에 따라 조정 */}
             <Calculator
               standardEstimate={standardEstimate}
               adminEstimate={adminEstimate}
@@ -509,12 +596,10 @@ export default function HallDetailPage() {
       </div>
       {/* --- 모바일 필터 모달 (하단 시트 형태) --- */}
       {isFilterModalOpen && (
-        // 배경 클릭 시 닫기
         <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[110] flex items-end transition-opacity duration-300 ease-out"
-          onClick={closeModal} // 배경 클릭 시 모든 모달 닫기
+          onClick={closeModal}
         >
-          {/* 실제 모달 컨텐츠 (이벤트 버블링 방지) */}
           <div
             className="w-full bg-white rounded-t-2xl p-4 pt-5 shadow-xl max-h-[85vh] overflow-y-auto transform transition-transform duration-300 ease-out translate-y-0 z-20"
             onClick={(e) => e.stopPropagation()}
@@ -522,7 +607,7 @@ export default function HallDetailPage() {
               transform: isFilterModalOpen
                 ? "translateY(0)"
                 : "translateY(100%)",
-            }} // 나타나는 애니메이션
+            }}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">필터 설정</h3>
@@ -640,7 +725,7 @@ export default function HallDetailPage() {
               transform: isCalculatorModalOpen
                 ? "translateY(0)"
                 : "translateY(100%)",
-            }} // 나타나는 애니메이션
+            }}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
@@ -653,10 +738,7 @@ export default function HallDetailPage() {
                 <IoClose size={24} />
               </button>
             </div>
-            {/* 계산기 컴포넌트가 w-full을 가지도록 내부 수정이 필요할 수 있음 */}
             <div className="calculator-modal-content">
-              {" "}
-              {/* 계산기 너비 조정을 위해 추가적인 div로 감쌀 수 있음 */}
               <Calculator
                 standardEstimate={standardEstimate}
                 adminEstimate={adminEstimate}
@@ -667,10 +749,14 @@ export default function HallDetailPage() {
         </div>
       )}
       {/* Image Modal */}
-      {showImageModal && (
+      {showImageModal && currentHall && currentHall.hall_photos && (
         <ImageModal
-          photos={currentHall?.hall_photos || []}
+          // currentHall.hall_photos가 이미 ImageModal의 Photo[]와 호환된다고 가정
+          // 그렇지 않다면 여기서 필요한 형태로 매핑해야 합니다.
+          // 예: photos={currentHall.hall_photos.map(p => ({ url: p.imageUrl, caption: p.desc }))}
+          photos={currentHall.hall_photos}
           onClose={handleCloseModal}
+          // initialIndex는 필요에 따라 PhotoSection에서 클릭된 이미지 인덱스를 전달받도록 수정 가능
         />
       )}
     </div>
