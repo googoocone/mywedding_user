@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AlignJustify, X } from "lucide-react";
+import { AlignJustify, Router, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { loginWithKakao } from "@/lib/auth/loginWithKakao";
 import { AuthContext } from "@/context/AuthContext";
 import { logout } from "@/lib/auth/logout";
+import { useRouter } from "next/navigation";
 
 const navList = [
   { name: "홈", url: "/" },
@@ -22,6 +23,9 @@ export default function Navigation() {
   const { user }: any = useContext(AuthContext);
   const { setUser }: any = useContext(AuthContext);
 
+  console.log("user", user);
+
+  const router = useRouter();
   return (
     <>
       <div className="hidden w-full min-w-[1250px] h-[70px] sm:flex items-center justify-center">
@@ -50,7 +54,7 @@ export default function Navigation() {
               <HeaderButtons></HeaderButtons>
             ) : (
               <button
-                onClick={loginWithKakao}
+                onClick={() => router.push("/login")}
                 className="w-[80px] h-[40px] bg-[#FFE4DE] text-[#ff767b] text-[14px] font-semibold rounded-xl cursor-pointer"
               >
                 로그인
@@ -114,7 +118,7 @@ export default function Navigation() {
               ) : (
                 <li>
                   <button
-                    onClick={loginWithKakao}
+                    onClick={() => router.push("/login")}
                     className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                   >
                     로그인

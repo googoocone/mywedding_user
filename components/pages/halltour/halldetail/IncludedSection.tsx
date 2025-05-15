@@ -9,10 +9,10 @@ export default function IncludedSection({ hall_includes }: any) {
         <div className="w-full  flex flex-col items-start gap-4">
           {hall_includes.map((item: any) => (
             <div className="w-full flex items-center justify-between">
-              <div className="w-[130px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
+              <div className="w-[140px] sm:w-[190px] flex-shrink-0 text-gray-500 self-start">
                 {item.category}
               </div>
-              <div className="w-[550px] pl-2   flex flex-wrap items-center justify-start gap-2">
+              <div className="w-[540px] pl-2   flex flex-wrap items-center justify-start gap-2">
                 {item.subcategory}
               </div>
             </div>
