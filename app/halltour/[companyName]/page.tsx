@@ -463,7 +463,7 @@ export default function HallDetailPage() {
 
         {/* 오른쪽 필터 & 계산기 (데스크톱용) */}
         <div className="w-full lg:w-[400px] mt-10 lg:mt-10 hidden lg:block">
-          <div className="bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg space-y-2 mb-4 sticky top-4">
+          <div className="bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg space-y-2 mb-4 top-4">
             {/* 홀 이름 필터 */}
             <div className="flex flex-col space-y-1">
               <span className="text-sm font-medium text-gray-700">홀 이름</span>
