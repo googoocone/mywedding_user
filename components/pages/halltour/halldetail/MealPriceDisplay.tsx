@@ -22,9 +22,12 @@ export default function MealPriceDisplay({ item }: MealPriceDisplayProps) {
 
   // item.extra 내용이 비어있지 않은지 확인
   const hasExtra = item.extra && item.extra.trim() !== "";
-
+  console.log("item", item);
   return (
     <div className="w-full flex gap-1 items-baseline">
+      <div className="w-[95px] flex items-center justify-start flex-shrink-0 text-gray-700">
+        {item.meal_type} {/* 카테고리 텍스트와 콜론 */}
+      </div>
       <div className="w-[55px] flex items-center justify-start flex-shrink-0 text-gray-700">
         {item.category} : {/* 카테고리 텍스트와 콜론 */}
       </div>

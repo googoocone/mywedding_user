@@ -29,6 +29,7 @@ interface BasicInfoSectionProps {
   interval_minutes?: number | null;
   price?: number | null;
   meal_price?: MealPriceData[];
+  meal_types: string[];
 }
 
 export default function BasicInfoSection({
@@ -41,6 +42,7 @@ export default function BasicInfoSection({
   interval_minutes,
   price,
   meal_price,
+  meal_types,
 }: BasicInfoSectionProps) {
   const cleanedStringTime = time?.replace(/"/g, "") || "";
 
@@ -134,10 +136,10 @@ export default function BasicInfoSection({
             </div>
           </div>
           <div className="w-full flex items-start justify-between">
-            <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start pt-1">
+            <div className="w-[70px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start pt-1">
               식대
             </div>
-            <div className="flex-1 pl-2 flex flex-col items-end sm:items-start gap-0.5 text-gray-700">
+            <div className="flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
               {meal_price && meal_price.length > 0 ? (
                 meal_price.map((item, index) => (
                   <MealPriceDisplay
