@@ -58,7 +58,7 @@ interface Hall {
   id: number;
   name: string;
   mood?: string;
-  type?: string;
+  type?: string | null;
   guarantees?: number;
   interval_minutes?: number;
   parking?: number;
