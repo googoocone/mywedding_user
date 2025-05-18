@@ -18,7 +18,7 @@ interface EstimateOption {
   id: number;
   name: string;
   price: number;
-  is_required: boolean;
+  is_required: boolean; // 이 필드를 활용하여 초기 선택 상태 결정
 }
 interface Estimate {
   id: number;
@@ -54,12 +54,10 @@ export default function Calculator({
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
   // --- 표시할 견적서 및 비교 견적서 결정 ---
-  // selectedType이 'admin'이고 adminEstimate가 실제로 존재하면 adminEstimate를 표시, 아니면 standardEstimate 표시
   const displayEstimate =
     selectedType === "admin" && adminEstimate
       ? adminEstimate
       : standardEstimate;
-  // 비교 대상은 selectedType이 'admin'이고 adminEstimate와 standardEstimate 둘 다 있을 때만 standardEstimate가 됨
   const compareEstimate =
     selectedType === "admin" && adminEstimate && standardEstimate
       ? standardEstimate
@@ -67,7 +65,6 @@ export default function Calculator({
 
   // --- 표시할 식대 목록 필터링 ('소인', '음주류' 제외) ---
   const filteredMealPrices = useMemo(() => {
-    // displayEstimate 기준으로 필터링
     return (
       displayEstimate?.meal_prices?.filter(
         (meal) => meal.category !== "소인" && meal.category !== "음주류"
@@ -78,14 +75,22 @@ export default function Calculator({
   // --- 상태 초기화 useEffect ---
   useEffect(() => {
     // displayEstimate가 바뀔 때마다 실행
-    const initialCounts = filteredMealPrices.reduce((acc, meal) => {
-      // filteredMealPrices는 displayEstimate에서 파생되었으므로 meal.id 사용 가능
+    const initialMealCounts = filteredMealPrices.reduce((acc, meal) => {
       acc[meal.id] = 0;
       return acc;
     }, {} as MealCounts);
-    setMealCounts(initialCounts);
-    setSelectedOptions([]);
-  }, [displayEstimate]); // displayEstimate가 변경될 때 초기화 (filteredMealPrices 대신)
+    setMealCounts(initialMealCounts);
+
+    // ✨ [수정됨] 필수 옵션을 기본적으로 선택하도록 selectedOptions 초기화
+    if (displayEstimate?.estimate_options) {
+      const initialSelected = displayEstimate.estimate_options
+        .filter((option) => option.is_required) // 모든 필수 옵션을
+        .map((option) => option.id); // ID 배열로 만듦
+      setSelectedOptions(initialSelected);
+    } else {
+      setSelectedOptions([]); // 견적 옵션이 없으면 빈 배열로 초기화
+    }
+  }, [displayEstimate, filteredMealPrices]); // displayEstimate 또는 filteredMealPrices 변경 시 실행
 
   // --- 이벤트 핸들러 ---
   const handleOptionToggle = (optionId: number) => {
@@ -118,73 +123,56 @@ export default function Calculator({
   };
 
   // --- 비용 계산 useMemo ---
-  // totalDisplayCost: 화면에 표시되는 최종 금액
-  // totalCompareCost: 비교 대상(standard)의 총 금액 (할인 계산용)
-  // totalDiscount: 총 할인액
   const { totalDisplayCost, totalCompareCost, totalDiscount } = useMemo(() => {
-    // 표시할 견적서가 없으면 0 반환
     if (!displayEstimate)
       return { totalDisplayCost: 0, totalCompareCost: 0, totalDiscount: 0 };
 
-    // displayEstimate 기준 비용 요소 초기화
     let currentHallCost = displayEstimate.hall_price || 0;
     let currentMealCost = 0;
     let currentOptionsCost = 0;
 
-    // compareEstimate 기준 비용 요소 초기화 (없으면 displayEstimate 값으로)
     let compareHallCost = compareEstimate?.hall_price ?? currentHallCost;
     let compareMealCost = 0;
     let compareOptionsCost = 0;
 
-    // 식대 비용 계산
     filteredMealPrices.forEach((mealPrice) => {
       const count = mealCounts[mealPrice.id] || 0;
-      currentMealCost += count * mealPrice.price; // 현재 식대 비용 누적
+      currentMealCost += count * mealPrice.price;
 
-      // 비교 대상(standard) 식대 비용 계산
       const compareMeal = compareEstimate?.meal_prices.find(
         (m) => m.category === mealPrice.category
       );
-      const comparePriceValue = compareMeal?.price ?? mealPrice.price; // standard 가격 없으면 현재 가격
+      const comparePriceValue = compareMeal?.price ?? mealPrice.price;
       compareMealCost += count * comparePriceValue;
     });
 
-    // 옵션 비용 계산
+    // ✨ [수정됨] 옵션 비용 계산 시 is_required와 관계없이 selectedOptions 기준으로만 판단
     if (
       displayEstimate.estimate_options &&
       Array.isArray(displayEstimate.estimate_options)
     ) {
       displayEstimate.estimate_options.forEach((option) => {
-        const isSelected = selectedOptions.includes(option.id);
+        const isSelected = selectedOptions.includes(option.id); // 선택 여부만 확인
         const currentPrice = option.price;
 
-        // 비교 대상(standard) 옵션 찾기 (ID 또는 이름으로 매칭)
         const compareOption = compareEstimate?.estimate_options.find(
           (opt) => opt.id === option.id || opt.name === option.name
         );
-        const comparePriceValue = compareOption?.price ?? currentPrice; // standard 가격 없으면 현재 가격
+        const comparePriceValue = compareOption?.price ?? currentPrice;
 
-        // 필수 옵션 비용 누적
-        if (option.is_required) {
-          currentOptionsCost += currentPrice;
-          compareOptionsCost += comparePriceValue;
-        }
-        // 선택된 옵션 비용 누적
-        else if (isSelected) {
+        // 선택된 옵션만 비용에 누적 (필수/선택 구분 없음)
+        if (isSelected) {
           currentOptionsCost += currentPrice;
           compareOptionsCost += comparePriceValue;
         }
       });
     }
 
-    // 최종 비용 합산
     const calcTotalDisplayCost =
       currentHallCost + currentMealCost + currentOptionsCost;
-    // 비교 총액은 compareEstimate가 있을 때만 의미 있음
     const calcTotalCompareCost = compareEstimate
       ? compareHallCost + compareMealCost + compareOptionsCost
       : calcTotalDisplayCost;
-    // 할인액 계산 (음수 방지)
     const calcTotalDiscount =
       compareEstimate && calcTotalCompareCost > calcTotalDisplayCost
         ? calcTotalCompareCost - calcTotalDisplayCost
@@ -206,7 +194,7 @@ export default function Calculator({
   // --- 렌더링 로직 ---
   if (!displayEstimate) {
     return (
-      <div className="w-[400px] h-[500px] rounded-xl border border-gray-400 mt-4 p-5 flex items-center justify-center text-gray-500">
+      <div className="w-full sm:w-[400px] h-[500px] rounded-xl border border-gray-400 mt-4 p-5 flex items-center justify-center text-gray-500">
         표시할 견적 정보가 없습니다. 필터를 확인해주세요.
       </div>
     );
@@ -217,7 +205,7 @@ export default function Calculator({
     return amount.toLocaleString("ko-KR");
   };
 
-  // 필수/선택 옵션 분리 (displayEstimate 기준)
+  // 필수/선택 옵션 분리 (displayEstimate 기준 - UI 표시에 여전히 사용)
   const requiredEstimateOptions =
     displayEstimate.estimate_options?.filter((o) => o.is_required) || [];
   const optionalEstimateOptions =
@@ -233,7 +221,6 @@ export default function Calculator({
       </div>
       <div className="text-sm text-gray-500 mb-4">
         ❤️ 나의 웨딩 견적은 얼마?
-        {/* compareEstimate가 있을 때만 (즉, admin 견적을 보고 있을 때만) 할인 표시 */}
         {compareEstimate && (
           <span className="ml-2 text-blue-600 font-semibold">(할인 적용)</span>
         )}
@@ -246,7 +233,6 @@ export default function Calculator({
         <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
           <span className="text-gray-700 text-sm">홀 대관료</span>
           <div className="flex items-center">
-            {/* 할인 정보 표시: compareEstimate가 있고 가격이 다를 때 */}
             {compareEstimate &&
               compareEstimate.hall_price !== displayEstimate.hall_price && (
                 <span className="text-xs text-gray-400 line-through mr-2">
@@ -264,13 +250,11 @@ export default function Calculator({
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2 text-gray-700">식대</h3>
         {filteredMealPrices.map((mealPrice) => {
-          // 비교 가격 찾기
           const compareMeal = compareEstimate?.meal_prices.find(
             (m) => m.category === mealPrice.category
           );
           const comparePriceValue = compareMeal?.price;
           const currentPrice = mealPrice.price;
-          // 할인 정보 표시 조건: compareEstimate가 있고, standard 가격이 존재하며, standard > admin 일 때
           const showDiscount =
             compareEstimate &&
             comparePriceValue !== undefined &&
@@ -286,7 +270,6 @@ export default function Calculator({
           return (
             <div key={mealPrice.id} className="bg-gray-50 p-3 rounded-lg mb-2">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center items-start">
-                {/* 식대 정보 */}
                 <div className="flex-1">
                   <span className="text-gray-700 text-sm font-medium">
                     {mealPrice.meal_type}
@@ -295,8 +278,6 @@ export default function Calculator({
                     <span className="text-xs text-gray-500">
                       ({formatCurrency(currentPrice)}원/{mealPrice.category})
                     </span>
-
-                    {/* 할인 정보 조건부 표시 */}
                     {showDiscount && (
                       <div className="text-xs text-red-500 ml-2 sm:ml-0  font-semibold">
                         -{formatCurrency(discountAmount)}원({discountPercent}%
@@ -305,7 +286,6 @@ export default function Calculator({
                     )}
                   </div>
                 </div>
-                {/* 인원수 입력 */}
                 <div className="flex  w-full sm:w-[210px] items-center justify-between mt-2">
                   <div className="flex items-center mx-0 sm:mx-2">
                     <input
@@ -320,7 +300,6 @@ export default function Calculator({
                     />
                     <span className="text-sm text-gray-600 ml-1">명</span>
                   </div>
-                  {/* 소계 */}
                   <span className="font-semibold text-gray-900 w-28 text-right">
                     {formatCurrency(
                       (mealCounts[mealPrice.id] || 0) * currentPrice
@@ -345,11 +324,11 @@ export default function Calculator({
         optionalEstimateOptions.length > 0) && (
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2 text-gray-700">옵션</h3>
-          {/* 필수 옵션 */}
+          {/* ✨ [수정됨] 필수 옵션도 체크박스 표시 및 토글 가능 */}
           {requiredEstimateOptions.length > 0 && (
             <div className="mb-3">
               <h4 className="text-md font-medium mb-1 text-gray-600">
-                필수 포함 옵션
+                기본 포함 옵션 (선택 가능) {/* 사용자 인지를 위한 문구 변경 */}
               </h4>
               {requiredEstimateOptions.map((option) => {
                 const compareOption = compareEstimate?.estimate_options.find(
@@ -364,9 +343,18 @@ export default function Calculator({
                 return (
                   <div
                     key={option.id}
-                    className="flex justify-between items-center bg-gray-50 p-2 rounded-lg mb-1"
+                    className="flex justify-between items-center bg-gray-50 p-2 rounded-lg mb-1 hover:bg-gray-100 transition-colors"
                   >
-                    <span className="text-sm text-gray-700">{option.name}</span>
+                    <label className="flex items-center text-sm text-gray-700 cursor-pointer flex-1 mr-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedOptions.includes(option.id)}
+                        onChange={() => handleOptionToggle(option.id)}
+                        className="mr-2 h-4 w-4 rounded border-gray-300 text-[#ff767b] focus:ring-[#ff9a9e]"
+                        aria-label={option.name} // 접근성을 위한 aria-label 추가
+                      />
+                      {option.name}
+                    </label>
                     <div className="flex items-center">
                       {showDiscount && (
                         <span className="text-xs text-gray-400 line-through mr-2">
@@ -388,7 +376,7 @@ export default function Calculator({
           {optionalEstimateOptions.length > 0 && (
             <div>
               <h4 className="text-md font-medium mb-1 text-gray-600">
-                선택 가능 옵션
+                추가 선택 옵션
               </h4>
               {optionalEstimateOptions.map((option) => {
                 const compareOption = compareEstimate?.estimate_options.find(
@@ -411,6 +399,7 @@ export default function Calculator({
                         checked={selectedOptions.includes(option.id)}
                         onChange={() => handleOptionToggle(option.id)}
                         className="mr-2 h-4 w-4 rounded border-gray-300 text-[#ff767b] focus:ring-[#ff9a9e]"
+                        aria-label={option.name} // 접근성을 위한 aria-label 추가
                       />
                       {option.name}
                     </label>
@@ -433,7 +422,6 @@ export default function Calculator({
           )}
         </div>
       )}
-      {/* 옵션 없을 때 메시지 (displayEstimate 기준) */}
       {displayEstimate.estimate_options?.length === 0 && (
         <div className="mb-4 text-sm text-gray-400">
           {" "}
@@ -446,7 +434,6 @@ export default function Calculator({
 
       {/* 최종 금액 */}
       <div className="mt-auto">
-        {/* 총 할인 금액 (0보다 클 때만 표시) */}
         {totalDiscount > 0 && (
           <div className="flex justify-between items-center text-sm mb-2 text-red-600">
             <span className="font-semibold">총 할인 금액</span>
@@ -455,7 +442,6 @@ export default function Calculator({
             </span>
           </div>
         )}
-        {/* 총 예상 금액 */}
         <div className="flex justify-between items-center text-xl">
           <span className="font-semibold text-gray-800">총 예상 금액</span>
           <span className="font-bold text-2xl text-[#ff767b]">

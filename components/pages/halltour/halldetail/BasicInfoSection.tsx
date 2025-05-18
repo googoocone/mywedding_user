@@ -85,9 +85,9 @@ export default function BasicInfoSection({
             <div className="w-[130px] xs:w-[130px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start">
               식대
             </div>
-            <div className="flex flex-col items-center justify-start gap-1">
-              {meal_types.map((item: string) => (
-                <div>{item?.meal_type}</div>
+            <div className=" flex flex-col items-center justify-start  gap-1">
+              {meal_types.map((item: any) => (
+                <div className="text-left">{item?.meal_type}</div>
               ))}
             </div>
 
