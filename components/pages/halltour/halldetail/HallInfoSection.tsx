@@ -233,7 +233,7 @@ export default function HallInfoSection({
             <div className="w-[120px] sm:w-[180px] flex-shrink-0 text-gray-500 self-start">
               접근성
             </div>
-            <div className="w-[650px] pl-[20px] flex flex-wrap items-center justify-start gap-2 text-gray-700">
+            <div className="w-[650px] pl-[20px] flex flex-wrap items-center justify-start gap-2 text-gray-700 whitespace-pre-line">
               {" "}
               {/* 텍스트 색상 추가 */}
               {accessibility || "정보 없음"}
