@@ -96,7 +96,7 @@ export default function BasicInfoSection({
                 hallTypesArray.map((type, index) => (
                   <span
                     key={`${type}-${index}`}
-                    className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs mr-1 mb-1"
+                    className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-md mr-1 mb-1"
                   >
                     {type}
                   </span>

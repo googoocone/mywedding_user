@@ -71,28 +71,25 @@ export default function Home() {
             </h2>
             <div className="w-full h-[100px] flex items-center justify-between flex-wrap gap-2">
               {guideMenu.map((item, index) => (
-                <div
+                <a
                   key={index}
-                  className="w-[48%] h-[100px] sm:w-[120px] sm:h-[120px] p-2 rounded-lg shadow-lg  text-black/50 hover:text-black duration-400 bg-white flex flex-col items-center justify-between cursor-pointer"
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-[48%] h-[100px] sm:w-[120px] sm:h-[120px] p-2 rounded-lg shadow-lg text-black/50 hover:text-black duration-300 bg-white flex flex-col items-center justify-between cursor-pointer"
                 >
                   <div className="w-full h-[27px] flex items-center justify-start">
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      className="w-full h-full"
-                    >
-                      <Image
-                        src={item.icon}
-                        width={32}
-                        height={32}
-                        alt=""
-                      ></Image>
-                    </a>
+                    <Image
+                      src={item.icon}
+                      width={32}
+                      height={32}
+                      alt={item.title}
+                    />
                   </div>
-                  <div className="w-full font-semibold  text-[16px] ">
+                  <div className="w-full mt-6 font-semibold text-[16px] text-right">
                     {item.title}
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           </div>
