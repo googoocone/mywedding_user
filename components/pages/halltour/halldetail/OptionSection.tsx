@@ -1,14 +1,9 @@
 import Link from "next/link";
-import cn from "classnames"; // cn 함수 import 확인
+import cn from "classnames";
 
-// FaInstagram 아이콘이 사용되지 않는 것 같으니 제거해도 됩니다.
-// import { FaInstagram } from "react-icons/fa";
-
-// OptionDescDisplay 컴포넌트 import 확인
 import OptionDescDisplay from "./OptionDescDisplay";
+import { AiOutlineLink } from "react-icons/ai";
 
-// OptionSection 컴포넌트는 hall_options 배열을 prop으로 받습니다.
-// 정확한 타입 정의가 있다면 { hall_options: YourOptionItemType[] } 와 같이 사용하세요.
 export default function OptionSection({
   hall_options,
 }: {
@@ -23,6 +18,8 @@ export default function OptionSection({
   ) {
     return null; // 옵션 데이터가 없으면 아무것도 렌더링하지 않음
   }
+
+  console.log("hall_options", hall_options);
 
   return (
     // 전체 섹션 컨테이너
@@ -53,7 +50,7 @@ export default function OptionSection({
                   <OptionDescDisplay item={item}></OptionDescDisplay>
                 </div>
 
-                <div className="w-full sm:w-[570px] pl-3 sm:pl-[20px] flex flex-wrap items-start justify-start gap-6 sm:gap-8">
+                <div className="w-full sm:w-[570px] pl-3 sm:pl-[20px] flex flex-wrap items-start justify-start gap-4 sm:gap-8">
                   {/* 가격 표시 영역 */}
                   {/* self-start 유지 */}
                   <div className="w-[95px] flex-shrink-0 self-start gap-2 flex-wrap text-gray-700">
@@ -73,9 +70,22 @@ export default function OptionSection({
                     </div>
                   </div>
 
-                  <div className="hidden sm:block sm:w-[335px] text-gray-700">
+                  <div className="hidden sm:block sm:w-[285px] text-gray-700">
                     {item.description || "-"}{" "}
                   </div>
+
+                  {item?.reference_url ? (
+                    <a
+                      href={item.reference_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline inline-flex items-center"
+                    >
+                      <AiOutlineLink className="mr-1" />
+                    </a>
+                  ) : (
+                    ""
+                  )}
                 </div>
               </div>
             )
