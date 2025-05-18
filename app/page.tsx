@@ -15,8 +15,15 @@ const hotSearch = [
 ];
 
 const guideMenu = [
-  { title: "웨딩 로드맵", icon: "/roadmap.png" },
-  { title: "상견례", icon: "/meeting.png" },
+  {
+    title: "웨딩 로드맵",
+    icon: "/roadmap.png",
+  },
+  {
+    title: "상견례",
+    icon: "/meeting.png",
+    url: "https://blog.naver.com/wedding-march/223869712777",
+  },
   { title: "웨딩홀 투어", icon: "/wedding.png" },
   { title: "드레스샵 투어", icon: "/dress.png" },
   { title: "스튜디오 상담", icon: "/studio.png" },
@@ -69,12 +76,18 @@ export default function Home() {
                   className="w-[48%] h-[100px] sm:w-[120px] sm:h-[120px] p-2 rounded-lg shadow-lg  text-black/50 hover:text-black duration-400 bg-white flex flex-col items-center justify-between cursor-pointer"
                 >
                   <div className="w-full h-[27px] flex items-center justify-start">
-                    <Image
-                      src={item.icon}
-                      width={32}
-                      height={32}
-                      alt=""
-                    ></Image>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      className="w-full h-full"
+                    >
+                      <Image
+                        src={item.icon}
+                        width={32}
+                        height={32}
+                        alt=""
+                      ></Image>
+                    </a>
                   </div>
                   <div className="w-full font-semibold  text-[16px] ">
                     {item.title}
