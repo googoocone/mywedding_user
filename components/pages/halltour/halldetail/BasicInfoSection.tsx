@@ -141,12 +141,15 @@ export default function BasicInfoSection({
             </div>
             <div className="flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
               {meal_price && meal_price.length > 0 ? (
-                meal_price.map((item, index) => (
-                  <MealPriceDisplay
-                    key={item.id || `meal-price-${index}`}
-                    item={item}
-                  />
-                ))
+                // meal_price 배열을 복사한 후 가격(price)에 따라 내림차순으로 정렬합니다.
+                [...meal_price] // 원본 배열을 변경하지 않기 위해 스프레드 연산자로 복사본을 만듭니다.
+                  .sort((a, b) => b.price - a.price) // price를 기준으로 내림차순 정렬 (b.price - a.price)
+                  .map((item, index) => (
+                    <MealPriceDisplay
+                      key={item.id || `meal-price-${index}`}
+                      item={item}
+                    />
+                  ))
               ) : (
                 <span className="text-xs text-gray-400">정보 없음</span>
               )}
