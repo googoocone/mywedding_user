@@ -22,7 +22,7 @@ export default function MealPriceDisplay({ item }: MealPriceDisplayProps) {
 
   // item.extra 내용이 비어있지 않은지 확인
   const hasExtra = item.extra && item.extra.trim() !== "";
-  console.log("item", item);
+
   return (
     <div className="w-full flex gap-1 items-baseline">
       <div className="w-[95px] flex items-center justify-start flex-shrink-0 text-gray-700">

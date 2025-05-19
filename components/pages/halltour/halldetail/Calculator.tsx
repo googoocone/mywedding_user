@@ -145,7 +145,7 @@ export default function Calculator({
       const comparePriceValue = compareMeal?.price ?? mealPrice.price;
       compareMealCost += count * comparePriceValue;
     });
-
+    console.log("filteredMealPrices", filteredMealPrices);
     // ✨ [수정됨] 옵션 비용 계산 시 is_required와 관계없이 selectedOptions 기준으로만 판단
     if (
       displayEstimate.estimate_options &&
@@ -303,7 +303,7 @@ export default function Calculator({
                   <span className="font-semibold text-gray-900 w-28 text-right">
                     {formatCurrency(
                       (mealCounts[mealPrice.id] || 0) * currentPrice
-                    )}{" "}
+                    )}
                     원
                   </span>
                 </div>
@@ -313,8 +313,7 @@ export default function Calculator({
         })}
         {filteredMealPrices.length === 0 && (
           <div className="text-sm text-gray-400 bg-gray-50 p-3 rounded-lg">
-            {" "}
-            계산 가능한 식대 항목이 없습니다. ('소인', '음주류' 제외){" "}
+            계산 가능한 식대 항목이 없습니다. ('소인', '음주류' 제외)
           </div>
         )}
       </div>
@@ -358,13 +357,11 @@ export default function Calculator({
                     <div className="flex items-center">
                       {showDiscount && (
                         <span className="text-xs text-gray-400 line-through mr-2">
-                          {" "}
-                          {formatCurrency(comparePriceValue)} 원{" "}
+                          {formatCurrency(comparePriceValue)} 원
                         </span>
                       )}
                       <span className="text-sm font-semibold text-gray-900">
-                        {" "}
-                        {formatCurrency(currentPrice)} 원{" "}
+                        {formatCurrency(currentPrice)} 원
                       </span>
                     </div>
                   </div>
@@ -406,13 +403,11 @@ export default function Calculator({
                     <div className="flex items-center">
                       {showDiscount && (
                         <span className="text-xs text-gray-400 line-through mr-2">
-                          {" "}
-                          {formatCurrency(comparePriceValue)} 원{" "}
+                          {formatCurrency(comparePriceValue)} 원
                         </span>
                       )}
                       <span className="text-sm font-semibold text-gray-900">
-                        {" "}
-                        {formatCurrency(currentPrice)} 원{" "}
+                        {formatCurrency(currentPrice)} 원
                       </span>
                     </div>
                   </div>
@@ -424,8 +419,7 @@ export default function Calculator({
       )}
       {displayEstimate.estimate_options?.length === 0 && (
         <div className="mb-4 text-sm text-gray-400">
-          {" "}
-          추가 옵션 정보가 없습니다.{" "}
+          추가 옵션 정보가 없습니다.
         </div>
       )}
 
