@@ -39,23 +39,20 @@ export default function SignInPage() {
   // 로딩이 완료되었고, 사용자가 로그인하지 않은 경우에만 아래 UI를 렌더링합니다.
   return (
     <div className="max-w-xl mt-20 sm:mt-40 mx-auto pt-10 pb-24 px-4">
-      {" "}
       {/* 상단 마진 및 좌우 패딩 조정 */}
       <div className="flex flex-col gap-6">
         <h1 className="text-xl sm:text-2xl font-semibold text-center text-gray-800">
           로그인 또는 회원가입
         </h1>
-        <hr className="w-48 sm:w-full max-w-[300px] mx-auto border-b-gray-300"></hr>{" "}
+        <hr className="w-48 sm:w-full max-w-[300px] mx-auto border-b-gray-300"></hr>
         {/* 너비 조정 */}
         <div className="text-center text-md sm:text-lg md:text-xl font-semibold text-gray-700">
-          {" "}
           {/* 텍스트 크기 조정 */}
           <span className="text-[#F6969A] font-bold">My Wedding Diary</span>에
           오신것을 환영합니다.
         </div>
       </div>
       <div className="text-center text-xs sm:text-sm text-gray-500 mt-3 mb-12">
-        {" "}
         {/* 마진 조정 */}
         SNS 계정을 이용해서 로그인 또는 회원가입을 해주세요.
       </div>
