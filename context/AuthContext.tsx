@@ -32,11 +32,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true); // 초기 상태는 로딩 중
 
-  // fetchUser 함수를 useCallback으로 감싸서 불필요한 재생성을 방지합니다.
-  // (환경 변수는 빌드 시점에 고정되므로 의존성 배열에 넣지 않아도 됩니다.)
   const fetchUser = useCallback(async () => {
-    // setIsLoading(true); // fetchUser가 여러 번 호출될 수 있다면 여기서 true로 설정하는 것이 안전합니다.
-    // 하지만 초기 마운트 시에만 호출되므로, useState의 초기값으로 충분합니다.
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`,

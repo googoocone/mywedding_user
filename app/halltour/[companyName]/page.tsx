@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 import { useParams } from "next/navigation";
 import PhotoSection from "@/components/pages/halltour/halldetail/PhotoSection";
 import ImageModal from "@/components/pages/halltour/halldetail/ImageModal";
@@ -85,6 +86,9 @@ export default function HallDetailPage() {
   const companyName = Array.isArray(companyNameParam)
     ? companyNameParam[0]
     : companyNameParam;
+
+  let user = useContext(AuthContext);
+  console.log("유저를 보자", user);
 
   // --- 상태 변수 ---
   const [hallNameFilter, setHallNameFilter] = useState<string>("");
