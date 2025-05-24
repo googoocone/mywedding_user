@@ -7,16 +7,23 @@ import HallFilter from "@/components/pages/halltour/HallFilter";
 import HallSwiper from "@/components/pages/halltour/HallSwiper";
 // import HallViewed from "@/components/pages/halltour/HallViewed"; // 사용되지 않는 것 같으면 삭제 고려
 // import { weddingHallList } from "@/constants"; // 필요없으면 삭제 고려
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
 import { AiOutlineSearch } from "react-icons/ai";
 import { GiSettingsKnobs } from "react-icons/gi";
 import { useWeddingFilterStore } from "@/store/useWeddingFilterStore";
 
 import MobileHallFilter from "@/components/pages/halltour/MobileHallFilter";
+import AlertDialog from "@/components/common/AlertDialog";
 
 const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논현", "w웨딩"];
 
 export default function Halltour() {
+  let { user } = useContext(AuthContext);
+  console.log("user", user);
+  const router = useRouter();
+
   // Zustand 스토어에서 필터 상태 가져오기
   const selectedRegion = useWeddingFilterStore((state) => state.selectedRegion);
   const selectedSubRegion = useWeddingFilterStore(
@@ -41,6 +48,8 @@ export default function Halltour() {
 
   const [isLoading, setIsLoading] = useState(true); // 로딩 상태
   const [error, setError] = useState<string | null>(null); // 에러 상태 // 백엔드에서 데이터 가져오는 useEffect 훅
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchWeddingHalls = async () => {
@@ -189,6 +198,35 @@ export default function Halltour() {
     setAppliedSearchTerm(searchTerm);
   };
 
+  // 모달 렌더링 로직 //
+  // 공통 모달 렌더링==
+  useEffect(() => {
+    async function fetchInfo() {
+      console.log("user.phone", user.phone);
+      if (user?.phone === false) {
+        // user.phone이 false (인증되지 않음)일 때
+
+        setIsModalOpen(true); // 모달을 띄웁니다.
+      }
+    }
+    if (user !== undefined) {
+      fetchInfo();
+    }
+  }, [user]); // user 객체가 변경될 때마다 이펙트 실행
+
+  // ➍ 모달 확인 버튼 클릭 핸들러
+  const handleModalConfirm = () => {
+    setIsModalOpen(false); // 모달 닫기
+    router.push("/users"); // /users 페이지로 이동
+  };
+
+  // ➎ 모달 취소 버튼 클릭 핸들러 (모달만 닫고 페이지는 이동하지 않음)
+  const handleModalClose = () => {
+    setIsModalOpen(false); // 모달 닫기
+    // 사용자가 '취소'를 눌렀을 때 특정 동작을 원한다면 여기에 추가
+    // 예를 들어, 다른 페이지로 이동시키거나, 모달을 계속 표시하는 등의 선택
+  };
+
   return (
     <div className="mt-[80px] w-full ">
       {/* 검색창 부분 */} {/* ... (검색창 JSX) ... */}
@@ -293,6 +331,13 @@ export default function Halltour() {
           <div className="flex-1 h-[3000px] "></div>
         </div>
       </div>
+      <AlertDialog // ➏ AlertDialog 컴포넌트 추가
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onConfirm={handleModalConfirm}
+        message="휴대폰 번호 인증을 하시면 모든 할인 견적서를 보실 수 있어요!"
+        confirmText="인증하러 가기"
+      />
     </div>
   );
 }

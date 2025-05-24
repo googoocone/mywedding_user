@@ -12,6 +12,7 @@ interface User {
   id: string | number; // 예시 필드
   name: string; // 예시 필드
   email: string; // 예시 필드
+  phone: string;
   // ... 기타 필요한 사용자 정보
 }
 
