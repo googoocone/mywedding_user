@@ -51,6 +51,18 @@ export default function MyPage() {
   const [agreedToTermsOfService, setAgreedToTermsOfService] = useState(false);
   const [agreedToMarketing, setAgreedToMarketing] = useState(false);
 
+  // 🔽 휴대폰 인증 관련 상태 추가
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false); // 휴대폰 인증 완료 여부
+  const [verificationCode, setVerificationCode] = useState(""); // 인증 번호 입력 필드
+  const [isSendingCode, setIsSendingCode] = useState(false); // 인증 번호 전송 중 여부
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false); // 인증 번호 확인 중 여부
+  const [verificationMessage, setVerificationMessage] = useState(""); // 인증 번호 관련 메시지
+  const [countdown, setCountdown] = useState(0); // 인증 번호 유효 시간 카운트다운
+  const [countdownIntervalId, setCountdownIntervalId] =
+    useState<NodeJS.Timeout | null>(null); // 카운트다운 인터벌 ID
+
   // Load existing info (기존 로직 유지)
   useEffect(() => {
     async function fetchInfo() {
@@ -61,6 +73,8 @@ export default function MyPage() {
         );
         if (res.ok) {
           const data = await res.json();
+
+          console.log("data", data);
           if (data.nickname && data.nickname.trim() !== "") {
             setNickname(data.nickname);
             setHasExistingNickname(true);
@@ -71,6 +85,7 @@ export default function MyPage() {
             setHasExistingNickname(false);
             setNicknameAvailable(false);
           }
+
           setEmail(data.email || "");
           if (data.weddingDate) {
             setWeddingDate(data.weddingDate);
@@ -87,6 +102,10 @@ export default function MyPage() {
           setAgreedToPrivacyPolicy(data.agreedToPrivacyPolicy || false);
           setAgreedToTermsOfService(data.agreedToTermsOfService || false);
           setAgreedToMarketing(data.agreedToMarketing || false);
+
+          // 🔽 기존 사용자의 휴대폰 인증 정보 로드
+          setPhoneNumber(data.phoneNumber || "");
+          setIsPhoneVerified(data.isPhoneVerified || false);
         } else {
           setHasExistingNickname(false);
           if (user && user.email) {
@@ -107,6 +126,30 @@ export default function MyPage() {
       fetchInfo();
     }
   }, [user]);
+
+  // 카운트다운 useEffect
+  useEffect(() => {
+    if (countdown > 0 && !countdownIntervalId) {
+      const id = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+      setCountdownIntervalId(id);
+    } else if (countdown === 0 && countdownIntervalId) {
+      clearInterval(countdownIntervalId);
+      setCountdownIntervalId(null);
+      if (verificationMessage.includes("전송되었습니다")) {
+        // 인증번호 유효시간 만료 메시지
+        setVerificationMessage(
+          "인증번호 유효 시간이 만료되었습니다. 다시 요청해주세요."
+        );
+      }
+    }
+    return () => {
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+      }
+    };
+  }, [countdown, countdownIntervalId, verificationMessage]);
 
   // Validation 함수들 (기존 로직 유지)
   const validateNickname = (value: string) => {
@@ -141,6 +184,21 @@ export default function MyPage() {
     return true;
   };
 
+  // 🔽 휴대폰 번호 유효성 검사
+  const validatePhoneNumber = (value: string) => {
+    const phoneRegex = /^010\d{8}$/; // 010으로 시작하는 11자리 숫자
+    if (!value) {
+      setPhoneError("휴대폰 번호를 입력해주세요.");
+      return false;
+    }
+    if (!phoneRegex.test(value)) {
+      setPhoneError("유효한 휴대폰 번호(010XXXXXXXX)를 입력해주세요.");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
+
   const handleNicknameCheck = async () => {
     // (기존 로직 유지)
     if (hasExistingNickname || !validateNickname(nickname)) return;
@@ -165,6 +223,104 @@ export default function MyPage() {
       setNicknameError("닉네임 중복 확인 중 오류가 발생했습니다.");
     } finally {
       setIsNicknameChecking(false);
+    }
+  };
+
+  // 🔽 인증 번호 전송 요청 핸들러
+  const handleSendVerificationCode = async () => {
+    if (!validatePhoneNumber(phoneNumber)) {
+      return;
+    }
+    setIsSendingCode(true);
+    setVerificationMessage("");
+    setVerificationCode(""); // 기존 인증 번호 초기화
+    setIsPhoneVerified(false); // 인증 상태 초기화
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/send-sms-code`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ phone_number: phoneNumber }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setVerificationMessage(
+          "인증번호가 전송되었습니다. 3분 내로 입력해주세요."
+        );
+        setCountdown(180); // 3분 = 180초
+        if (countdownIntervalId) {
+          clearInterval(countdownIntervalId);
+          setCountdownIntervalId(null);
+        }
+      } else {
+        const errorData = await res.json();
+        setVerificationMessage(
+          errorData.detail || "인증번호 전송에 실패했습니다."
+        );
+      }
+    } catch (err) {
+      console.error("SMS 전송 실패", err);
+      setVerificationMessage("인증번호 전송 중 오류가 발생했습니다.");
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  // 🔽 인증 번호 확인 요청 핸들러
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      setVerificationMessage("인증번호를 입력해주세요.");
+      return;
+    }
+    setIsVerifyingCode(true);
+    setVerificationMessage("");
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/verify-sms-code`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            phone_number: phoneNumber,
+            code: verificationCode,
+          }),
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.verified) {
+          setIsPhoneVerified(true);
+          setVerificationMessage("휴대폰 인증이 완료되었습니다.");
+          if (countdownIntervalId) {
+            // 인증 성공 시 카운트다운 중지
+            clearInterval(countdownIntervalId);
+            setCountdownIntervalId(null);
+            setCountdown(0);
+          }
+        } else {
+          setIsPhoneVerified(false);
+          setVerificationMessage("인증번호가 일치하지 않거나 만료되었습니다.");
+        }
+      } else {
+        const errorData = await res.json();
+        setIsPhoneVerified(false);
+        setVerificationMessage(
+          errorData.detail || "인증번호 확인에 실패했습니다."
+        );
+      }
+    } catch (err) {
+      console.error("SMS 인증 실패", err);
+      setIsPhoneVerified(false);
+      setVerificationMessage("인증번호 확인 중 오류가 발생했습니다.");
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
@@ -204,6 +360,12 @@ export default function MyPage() {
       return;
     }
 
+    // 🔽 휴대폰 인증 확인
+    if (!isPhoneVerified) {
+      alert("휴대폰 인증을 완료해주세요.");
+      return;
+    }
+
     const payload = {
       nickname,
       email,
@@ -211,11 +373,11 @@ export default function MyPage() {
       weddingRegion,
       weddingBudget: weddingBudget ? parseInt(weddingBudget, 10) : null,
       estimatedGuests: estimatedGuests ? parseInt(estimatedGuests, 10) : null,
-      // 🔽 약관 동의 정보 payload에 추가
       agreedToPrivacyPolicy,
       agreedToTermsOfService,
       agreedToMarketing,
-      // ✨ 백엔드에서는 이 정보와 함께 동의 시각, 약관 버전 등을 함께 저장하는 것이 좋습니다.
+      phoneNumber, // 🔽 휴대폰 번호 추가
+      isPhoneVerified, // 🔽 휴대폰 인증 상태 추가
     };
 
     try {
@@ -247,6 +409,14 @@ export default function MyPage() {
         로딩 중...
       </div>
     );
+
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   return (
     <div className="w-full h-full py-8 px-4 sm:px-6 lg:px-8 mt-20 sm:mt-30">
@@ -355,6 +525,127 @@ export default function MyPage() {
               <p className="mt-1 text-sm text-red-600">{emailError}</p>
             )}
           </div>
+
+          {/* 🔽 휴대폰 인증 필드 추가 */}
+          <div className="space-y-4 pt-6">
+            {" "}
+            {/* 상단 여백 추가 */}
+            <div>
+              <label
+                htmlFor="phoneNumber"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                휴대폰 번호 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="phoneNumber"
+                  type="text"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, ""); // 숫자만 입력
+                    setPhoneNumber(value);
+                    setPhoneError(""); // 입력 시 에러 초기화
+                    setIsPhoneVerified(false); // 번호 변경 시 인증 상태 초기화
+                    setVerificationMessage(""); // 메시지 초기화
+                    setVerificationCode(""); // 인증코드 초기화
+                    if (countdownIntervalId) {
+                      // 카운트다운 중지
+                      clearInterval(countdownIntervalId);
+                      setCountdownIntervalId(null);
+                      setCountdown(0);
+                    }
+                  }}
+                  onBlur={() => validatePhoneNumber(phoneNumber)}
+                  maxLength={11} // 01012345678
+                  disabled={isPhoneVerified} // 인증 완료 시 비활성화
+                  className={`flex-grow px-3 py-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                    phoneError ? "border-red-500" : "border-gray-300"
+                  } ${
+                    isPhoneVerified
+                      ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                      : ""
+                  }`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={handleSendVerificationCode}
+                  disabled={
+                    isSendingCode ||
+                    !phoneNumber ||
+                    phoneError !== "" ||
+                    isPhoneVerified ||
+                    countdown > 0
+                  }
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSendingCode
+                    ? "전송 중..."
+                    : countdown > 0
+                    ? formatCountdown(countdown)
+                    : "인증번호 전송"}
+                </button>
+              </div>
+              {phoneError && (
+                <p className="mt-1 text-sm text-red-600">{phoneError}</p>
+              )}
+            </div>
+            {/* 인증 번호 입력 필드 */}
+            {!isPhoneVerified &&
+              verificationMessage &&
+              verificationMessage.includes("전송되었습니다") && (
+                <div>
+                  <label
+                    htmlFor="verificationCode"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    인증번호
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="verificationCode"
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) =>
+                        setVerificationCode(
+                          e.target.value.replace(/[^0-9]/g, "")
+                        )
+                      } // 숫자만 입력
+                      maxLength={6} // 인증번호 6자리 가정
+                      className="flex-grow px-3 py-2 border rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      disabled={isVerifyingCode || countdown === 0}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyCode}
+                      disabled={
+                        isVerifyingCode || !verificationCode || countdown === 0
+                      }
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isVerifyingCode ? "확인 중..." : "인증 확인"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            {/* 인증 상태 메시지 */}
+            {verificationMessage && (
+              <p
+                className={`mt-1 text-sm ${
+                  isPhoneVerified ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {verificationMessage}
+              </p>
+            )}
+            {/* {isPhoneVerified && (
+              <p className="mt-1 text-sm text-green-600">
+                휴대폰 인증이 완료되었습니다.
+              </p>
+            )} */}
+          </div>
+          {/* 🔼 휴대폰 인증 필드 추가 끝 */}
 
           {/* 웨딩 예정일 */}
           <div>

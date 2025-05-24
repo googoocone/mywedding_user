@@ -10,7 +10,7 @@ export default function KakaoCallback() {
     const code = new URL(window.location.href).searchParams.get("code");
 
     if (code) {
-      fetch("http://localhost:8000/auth/kakao/token", {
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/kakao/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
