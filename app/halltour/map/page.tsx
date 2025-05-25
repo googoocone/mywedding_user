@@ -1,43 +1,33 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import Link from "next/link";
+import React from "react";
+import MapComponent from "@/components/pages/halltour/map/MapComponent"; // 새로 만들거나 수정할 클라이언트 컴포넌트
+import { WeddingHall } from "@/types/weddingHall"; // 타입 경로 확인
 
-// 마커 아이콘 설정 (기본 마커 아이콘 문제 해결)
-const defaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+async function getWeddingHalls(): Promise<WeddingHall[]> {
+  const apiEndpoint = `http://localhost:8000/hall/get_wedding_halls`;
+  console.log("MapPage(서버): getWeddingHalls 호출");
+  try {
+    const response = await fetch(apiEndpoint, { cache: "no-store" });
+    if (!response.ok) {
+      console.error("MapPage(서버): Fetch 실패 -", response.statusText);
+      return [];
+    }
+    const data = await response.json();
 
-L.Marker.prototype.options.icon = defaultIcon;
+    return data || [];
+  } catch (error) {
+    console.error("MapPage(서버): Fetch 중 에러 -", error);
+    return [];
+  }
+}
 
-const WeddingMap = ({ weddingHalls }) => {
-  const gangnamCenter = [37.5173, 127.0473]; // 강남 좌표
+export default async function MapPage() {
+  const weddingHalls = await getWeddingHalls();
+  const naverMapClientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID; // 환경변수 우선, 없으면 하드코딩 (테스트용)
 
-  return (
-    <MapContainer center={gangnamCenter} zoom={12} style={{ height: "500px" }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      {weddingHalls.map((hall) => (
-        <Marker
-          key={hall.id}
-          position={[hall.lng / 10000000, hall.lat / 10000000]}
-        >
-          <Popup>
-            <div>
-              <h3>{hall.name}</h3>
-              <p>{hall.address}</p>
-              <Link href={`/wedding-hall/${hall.id}`}>
-                <a>상세 정보</a>
-              </Link>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
-  );
-};
+  if (!naverMapClientId) {
+    return <div>네이버 지도 Client ID가 설정되지 않았습니다.</div>;
+  }
 
-export default WeddingMap;
+  // 클라이언트 컴포넌트에 데이터와 ID 전달
+  return <MapComponent halls={weddingHalls} clientId={naverMapClientId} />;
+}

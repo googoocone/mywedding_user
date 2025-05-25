@@ -29,7 +29,11 @@ const guideMenu = [
     icon: "/wedding.png",
     url: "https://blog.naver.com/wedding-march/223871085397",
   },
-  { title: "드레스샵 투어", icon: "/dress.png" },
+  {
+    title: "드레스샵 투어",
+    icon: "/dress.png",
+    url: "https://blog.naver.com/wedding-march/223877498289",
+  },
   { title: "스튜디오 상담", icon: "/studio.png" },
 ];
 

@@ -12,8 +12,8 @@ import { useRouter } from "next/navigation";
 
 const navList = [
   { name: "홈", url: "/" },
-  { name: "웨딩홀 투어", url: "/halltour" },
   { name: "마웨다 스토리", url: "/story" },
+  { name: "웨딩홀 투어", url: "/halltour" },
   { name: "웨딩 로드맵", url: "/roadmap" },
   { name: "웨딩 가이드북", url: "/guidebook" },
 ];
@@ -116,7 +116,10 @@ export default function Navigation() {
               ) : (
                 <li>
                   <button
-                    onClick={() => router.push("/login")}
+                    onClick={() => {
+                      router.push("/login");
+                      setIsMenu((prev) => !prev);
+                    }}
                     className="block w-full py-3 text-center text-white bg-[#FF767B] rounded-md font-semibold hover:text-gray-600 transition"
                   >
                     로그인

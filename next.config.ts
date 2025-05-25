@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   images: {
     // ✅ remotePatterns에 Firebase Storage 호스트와 경로 패턴을 추가합니다.
     remotePatterns: [
