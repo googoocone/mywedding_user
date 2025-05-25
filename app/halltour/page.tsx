@@ -75,6 +75,7 @@ export default function Halltour() {
         } // ✅ 백엔드에서 가져온 데이터는 업체 객체들의 리스트입니다. // 각 업체 객체는 모든 홀과 관련 정보를 halls 리스트 형태로 가집니다.
 
         const data: any[] = await response.json(); // 데이터 구조는 제공해주신 JSON 예시와 같습니다.
+        console.log("data", data);
         setHalls(data); // 원본 데이터 그대로 상태에 저장
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
