@@ -36,7 +36,11 @@ const guideMenu = [
     icon: "/dress.png",
     url: "https://blog.naver.com/wedding-march/223877498289",
   },
-  { title: "스튜디오 상담", icon: "/studio.png" },
+  {
+    title: "스튜디오 상담",
+    icon: "/studio.png",
+    url: "https://blog.naver.com/wedding-march/223872329177",
+  },
 ];
 
 export default function Home() {
