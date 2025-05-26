@@ -96,66 +96,74 @@ export default function Halltour() {
 
     if (!halls || halls.length === 0) {
       return []; // 데이터가 없으면 빈 배열 반환
-    } // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. --- // Map을 사용하여 업체명 기준으로 데이터를 그룹화하고 해당 업체명의 모든 홀 목록을 수집합니다. // Map: key = 업체명 (string), value = { companyInfo: Company, allHalls: Hall[] } //    companyInfo: 해당 업체명의 대표 Company 객체 (보통 첫 번째 발견된 것) //    allHalls: 해당 업체명의 모든 Company 객체들의 halls 리스트에 있는 모든 Hall 객체들을 합친 목록
+    }
 
+    // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. ---
     const consolidatedCompanyData: Map<
       string,
       { representativeCompany: any; allHalls: any[] }
-    > = new Map(); // use any or specific types // 백엔드에서 가져온 원본 WeddingCompany 객체들의 리스트를 순회합니다.
+    > = new Map();
 
     for (const company of halls) {
-      // 업체의 name 속성이 유효하다면 처리
       if (company.name) {
         if (!consolidatedCompanyData.has(company.name)) {
-          // 이 업체명을 처음 만났다면 Map에 새로운 항목을 생성합니다.
           consolidatedCompanyData.set(company.name, {
-            companyInfo: company, // 이 company 객체를 해당 업체명의 대표 정보로 저장
-            allHalls: [], // 해당 업체명의 모든 홀 목록을 담을 빈 배열 초기화
+            companyInfo: company,
+            allHalls: [],
           });
-        } // 해당 업체 객체에 halls 리스트가 있고 비어있지 않다면
-
+        }
         if (company.halls && company.halls.length > 0) {
-          // Map에 저장된 해당 업체명의 정보 객체를 가져옵니다.
-          const existingData = consolidatedCompanyData.get(company.name)!; // non-null assertion // 현재 company 객체의 모든 홀 객체들을 수집된 allHalls 목록에 추가합니다. // 스프레드 문법 (...)을 사용하여 각 홀 객체를 개별 요소로 추가합니다.
-
+          const existingData = consolidatedCompanyData.get(company.name)!;
           existingData.allHalls.push(...company.halls);
         }
       }
-    } // 이제 consolidatedCompanyData Map은 업체명별로 대표 Company 정보와 해당 업체명의 모든 홀 목록을 가지고 있습니다. // 이 데이터를 가지고 최종 필터링된 리스트를 생성합니다.
+    }
 
-    let filtered: any[] = []; // 최종적으로 필터링된 항목들을 담을 리스트 (any[] 또는 원하는 타입) // consolidatedCompanyData Map의 값들 (각각 { companyInfo, allHalls })을 순회합니다.
+    // --- 2. 그룹화된 데이터를 필터링된 리스트로 변환합니다. ---
+    let filtered: any[] = [];
     for (const data of consolidatedCompanyData.values()) {
-      const representativeCompany = data.companyInfo; // 이 업체명의 대표 Company 객체 (원본)
-      const allHallsForCompany = data.allHalls; // 이 업체명의 모든 홀들의 목록 (합쳐짐) // 이 업체명에 대한 화면 표시 항목을 구성합니다. // 이 항목은 대표 Company 객체의 정보와 함께, 모든 홀 목록 (allHalls)을 포함합니다. // HallCard에서 이 항목을 받아 data.halls로 모든 홀 목록에 접근합니다.
+      const representativeCompany = data.companyInfo;
+      const allHallsForCompany = data.allHalls;
 
       const entry = {
-        // 대표 Company 객체의 모든 속성을 그대로 복사합니다.
-        // 이렇게 하면 원본 Company 객체의 모든 top-level 필드와 관계들이 유지됩니다.
-        ...representativeCompany, // 핵심: 원본 halls 리스트를, 해당 업체명의 모든 홀들을 합친 리스트로 덮어씁니다. // HallCard에서는 data.halls로 이 합쳐진 목록에 접근하게 됩니다.
-
-        halls: allHallsForCompany, // 합쳐진 모든 홀 목록을 할당 // 필요한 다른 Company 필드가 있다면 여기에 추가...
-      }; // 홀 정보가 하나라도 있는 업체만 최종 리스트에 포함합니다.
+        ...representativeCompany,
+        halls: allHallsForCompany,
+      };
 
       if (entry.halls && entry.halls.length > 0) {
-        filtered.push(entry); // 가공된 항목을 최종 필터링된 리스트에 추가
+        filtered.push(entry);
       }
-    } // --- 3. 기존 필터 적용 (업체명 중복이 제거되고 홀 목록이 합쳐진 리스트에 대해) --- // 이제 'filtered' 리스트의 각 항목은 업체명 중복이 제거된 Company 객체 (홀 목록은 합쳐짐)입니다. // 기존 필터들은 이 리스트에 대해 적용됩니다. // 검색어 필터 (업체명 또는 합쳐진 모든 홀 이름 목록 기준)
+    }
 
+    // --- 3. 기존 필터 적용 (업체명 중복이 제거되고 홀 목록이 합쳐진 리스트에 대해) ---
+
+    // 검색어 필터 (업체명 또는 합쳐진 모든 홀 이름 목록 기준)
     if (appliedSearchTerm.trim() !== "") {
-      const lowerSearchTerm = appliedSearchTerm.toLowerCase().trim();
+      // ✅ 검색어에서 띄어쓰기를 제거하고 소문자로 변환합니다.
+      const lowerSearchTerm = appliedSearchTerm
+        .toLowerCase()
+        .replace(/\s+/g, "");
+
       filtered = filtered.filter((company) => {
+        // ✅ 업체명에서 띄어쓰기를 제거하고 소문자로 변환하여 비교합니다.
         const companyNameMatch = company.name
           ?.toLowerCase()
-          .includes(lowerSearchTerm); // company.halls (합쳐진 홀 목록) 내의 어떤 홀 이름이라도 검색어에 일치하는지 확인
+          .replace(/\s+/g, "") // 띄어쓰기 제거
+          .includes(lowerSearchTerm);
 
+        // ✅ 홀 이름에서 띄어쓰기를 제거하고 소문자로 변환하여 비교합니다.
         const anyHallNameMatch = company.halls?.some((hall: any) =>
-          hall.name?.toLowerCase().includes(lowerSearchTerm)
+          hall.name
+            ?.toLowerCase()
+            .replace(/\s+/g, "") // 띄어쓰기 제거
+            .includes(lowerSearchTerm)
         );
 
         return companyNameMatch || anyHallNameMatch; // 업체명 또는 어떤 홀 이름이라도 일치 시 포함
       });
-    } // 지역 필터 (업체 주소 기준) - 이 필터는 변경 불필요
+    }
 
+    // 지역 필터 (업체 주소 기준)
     if (selectedRegion && selectedRegion !== "전체") {
       filtered = filtered.filter((company) => {
         const address = company.address || "";
@@ -167,33 +175,33 @@ export default function Halltour() {
 
         return regionMatch;
       });
-    } // 웨딩 타입 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 타입에 일치하는 경우)
+    }
 
+    // 웨딩 타입 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 타입에 일치하는 경우)
     if (selectedWeddingType && selectedWeddingType !== "전체") {
       filtered = filtered.filter((company) => {
-        // company.halls (합쳐진 홀 목록) 내의 어떤 홀이라도 해당 타입에 일치하는지 확인
         return company.halls?.some(
           (hall: any) => hall.type === selectedWeddingType
         );
       });
-    } // 꽃 장식 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 분위기에 일치하는 경우)
+    }
 
+    // 꽃 장식 필터 (주석 처리된 상태 유지)
     // if (selectedFlower && selectedFlower !== "전체") {
-    //   filtered = filtered.filter((company) => {
-    //     // company.halls (합쳐진 홀 목록) 내의 어떤 홀이라도 해당 분위기에 일치하는지 확인
-    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
-    //   });
-    // } // 최종 'filtered' 리스트는 업체명 중복이 제거되고 모든 필터 조건에 맞는 Company 객체들입니다. // 각 Company 객체의 'halls' 속성은 해당 업체명의 모든 홀들을 합친 목록입니다.
+    //   filtered = filtered.filter((company) => {
+    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
+    //   });
+    // }
 
-    return filtered; // 가공된 리스트 반환
+    return filtered; // 최종 필터링된 리스트 반환
   }, [
-    halls, // halls 상태 변경 시 useMemo 재실행
-    appliedSearchTerm, // 재실행 의존성
-    selectedRegion, // 재실행 의존성
-    selectedSubRegion, // 재실행 의존성
-    selectedWeddingType, // 재실행 의존성
-    selectedFlower, // 꽃 장식 필터 변경 시 재실행
-  ]); // useMemo 의존성 배열 // 검색 버튼 핸들러
+    halls,
+    appliedSearchTerm,
+    selectedRegion,
+    selectedSubRegion,
+    selectedWeddingType,
+    selectedFlower,
+  ]); // useMemo 의존성 배열
 
   const handleSearch = () => {
     setAppliedSearchTerm(searchTerm);

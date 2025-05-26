@@ -2,17 +2,11 @@
 
 import { useState } from "react";
 import { BsQuestionCircle } from "react-icons/bs";
-
-interface MealPriceItem {
-  id?: number; // 고유 ID (key prop으로 사용될 수 있음)
-  category: string; // 식사 카테고리 (예: 대인, 소인, 음주류)
-  price?: number; // 가격
-  extra?: string; // 추가 정보 (있을 수도, 없을 수도 있음)
-}
+import { MealPrice } from "@/types/hallDetail";
 
 // 컴포넌트가 받을 props 타입 정의
 interface MealPriceDisplayProps {
-  item: MealPriceItem; // 표시할 식사 가격 항목 데이터
+  item: MealPrice; // 표시할 식사 가격 항목 데이터
 }
 
 // 식사 가격 항목 하나를 표시하는 컴포넌트

@@ -1,16 +1,41 @@
-import Image from "next/image";
+// components/common/SearchBar.tsx
 
-export default function SearchBar() {
+"use client";
+
+import { useState } from "react";
+import { AiOutlineSearch } from "react-icons/ai";
+
+interface SearchBarProps {
+  onSearch: (term: string) => void; // 검색 실행 시 호출될 함수
+}
+
+export default function SearchBar({ onSearch }: SearchBarProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearchClick = () => {
+    onSearch(searchTerm); // 부모로부터 받은 onSearch 함수 호출
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearchClick();
+    }
+  };
+
   return (
-    <div className="w-full sm:w-[640px] h-[50px] flex rounded-full overflow-hidden border border-gray-300 relative">
+    <div className="w-full h-[50px] border border-gray-300 rounded-full flex items-center">
       <input
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="flex-1 h-full rounded-full focus:outline-none pl-6 pr-2" // 패딩 조정
+        placeholder="웨딩홀을 입력해주세요"
         type="text"
-        placeholder="검색하고 싶은 웨딩홀을 입력해주세요"
-        className="w-full h-full pl-6 pr-2 focus:outline-none placeholder:text-sm sm:placeholder:text-base md:placeholder:text-lg"
       />
-      <button className="w-[60px] h-full flex items-center justify-center bg-primary text-white rounded-r-full focus:outline-none cursor-pointer ">
-        <Image src="/search.svg" width={32} height={32} alt="검색 버튼"></Image>
-      </button>
+      <AiOutlineSearch
+        onClick={handleSearchClick}
+        className="text-2xl mr-4 cursor-pointer text-gray-500 hover:text-black" // 아이콘 스타일
+      />
     </div>
   );
 }
