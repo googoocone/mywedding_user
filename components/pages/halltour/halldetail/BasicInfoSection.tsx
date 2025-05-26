@@ -58,7 +58,7 @@ export default function BasicInfoSection({
   }, [hall_type]);
 
   return (
-    <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
+    <div className="w-full flex flex-col items-start justify-center  sm:px-0">
       <div className="text-2xl font-[600] mb-4">홀 상세정보</div>
       <div className="w-full flex flex-col sm:flex-row items-start justify-start">
         {" "}
@@ -135,19 +135,21 @@ export default function BasicInfoSection({
               {price != null ? price.toLocaleString() + "원" : "정보 없음"}
             </div>
           </div>
-          <div className="w-full flex items-start justify-between">
+          <div className="w-full flex items-start ">
+            {/* 이 부모 div에 flex 및 items-start 추가 */}
             <div className="w-[70px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start">
               식대
             </div>
-            <div className="flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
+            <div className="w-full flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
               {meal_price && meal_price.length > 0 ? (
                 // meal_price 배열을 복사한 후 가격(price)에 따라 내림차순으로 정렬합니다.
+                // MealPriceDisplay 컴포넌트는 각 item을 한 줄로 표시하도록 디자인되어 있습니다.
                 [...meal_price] // 원본 배열을 변경하지 않기 위해 스프레드 연산자로 복사본을 만듭니다.
                   .sort((a, b) => b.price - a.price) // price를 기준으로 내림차순 정렬 (b.price - a.price)
                   .map((item, index) => (
                     <MealPriceDisplay
                       key={item.id || `meal-price-${index}`}
-                      item={item}
+                      item={item} // 이 item이 MealPriceDisplay의 props로 전달됩니다.
                     />
                   ))
               ) : (

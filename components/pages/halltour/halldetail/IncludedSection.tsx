@@ -25,11 +25,11 @@ export default function IncludedSection({
   });
 
   return (
-    <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
+    <div className="w-full flex flex-col items-start justify-center  sm:px-0">
       <div className="w-full text-2xl font-[600] mb-4 flex flex-col sm:flex-row">
         <div>대관료 포함사항</div>
       </div>
-      <div className="w-full flex items-center justify-center">
+      <div className="w-full flex items-center justify-between">
         {/* 이 부분이 기본정보의 요소들이 들어가는 부분 */}
         <div className="w-full flex flex-col items-start gap-4">
           {/* ✨ [수정됨] 정렬된 sortedIncludes 배열을 사용하여 맵핑 */}

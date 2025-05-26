@@ -24,30 +24,34 @@ export default function MealPriceDisplay({ item }: MealPriceDisplayProps) {
   const hasExtra = item.extra && item.extra.trim() !== "";
 
   return (
-    <div className="w-full flex gap-1 items-baseline">
-      <div className="w-[95px] flex items-center justify-start flex-shrink-0 text-gray-700">
+    <div className="w-full flex justify-between gap-1 items-baseline">
+      <div className="w-[85px] flex items-center justify-start flex-shrink-0 text-gray-700">
         {item.meal_type} {/* 카테고리 텍스트와 콜론 */}
       </div>
       <div className="w-[55px] flex items-center justify-start flex-shrink-0 text-gray-700">
         {item.category} : {/* 카테고리 텍스트와 콜론 */}
       </div>
 
-      <div className="w-[100px] xs:w-[170px] flex-grow text-right relative text-gray-700">
-        {item.price?.toLocaleString()}원
-        {hasExtra && (
-          <span
-            className="ml-1 inline-flex items-center cursor-help text-gray-500 hover:text-gray-700 transition-colors"
-            onMouseEnter={() => setShowTooltip(true)} // 마우스 올리면 툴팁 표시
-            onMouseLeave={() => setShowTooltip(false)} // 마우스 벗어나면 툴팁 숨김
-          >
-            <BsQuestionCircle size={14} /> {/* 아이콘 크기 설정 */}
-          </span>
-        )}
-        {hasExtra && showTooltip && (
-          <div className="absolute right-0 bottom-full  p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-30 w-48 whitespace-pre-wrap">
-            {item.extra} {/* extra 내용 표시 */}
-          </div>
-        )}
+      <div className="w-full xs:w-full flex items-center  text-right relative text-gray-700">
+        <div className="w-full xs:w-[150px]">
+          {item.price?.toLocaleString()}원
+        </div>
+        <div className="w-[20px] h-[20px] mt-2">
+          {hasExtra && (
+            <span
+              className="ml-1 flex items-center justify-center cursor-help text-gray-500 hover:text-gray-700 transition-colors"
+              onMouseEnter={() => setShowTooltip(true)} // 마우스 올리면 툴팁 표시
+              onMouseLeave={() => setShowTooltip(false)} // 마우스 벗어나면 툴팁 숨김
+            >
+              <BsQuestionCircle size={14} /> {/* 아이콘 크기 설정 */}
+            </span>
+          )}
+          {hasExtra && showTooltip && (
+            <div className="absolute right-0 bottom-full  p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-30 w-48 whitespace-pre-wrap">
+              {item.extra} {/* extra 내용 표시 */}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
