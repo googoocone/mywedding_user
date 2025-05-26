@@ -136,7 +136,7 @@ export default function BasicInfoSection({
             </div>
           </div>
           <div className="w-full flex items-start justify-between">
-            <div className="w-[70px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start pt-1">
+            <div className="w-[70px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start">
               식대
             </div>
             <div className="flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
