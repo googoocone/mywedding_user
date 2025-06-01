@@ -1,12 +1,12 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
+import Image from "next/image";
 
 export default function HallSwiper() {
   const slideStyle = {
     width: "100%",
     height: "300px",
-    background: "#eee",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -23,35 +23,48 @@ export default function HallSwiper() {
         className="w-full"
       >
         <SwiperSlide style={{ width: "820px", height: "300px" }}>
-          <div
-            style={slideStyle}
-            className="relative bg-gray-200 flex items-center justify-center"
-          >
-            Slide 1
+          <div className="w-full h-[300px] relative flex items-center justify-center">
+            <Image
+              src="/images/pages/home/slide1_desc.png"
+              alt="슬라이드1"
+              fill
+            ></Image>
           </div>
         </SwiperSlide>
         <SwiperSlide style={{ width: "820px", height: "300px" }}>
           <div
             style={slideStyle}
-            className="relative bg-gray-200 flex items-center justify-center"
+            className="relative flex items-center justify-center"
           >
-            Slide 2
+            <Image
+              src="/images/pages/home/slide2_desc.png"
+              alt="슬라이드1"
+              fill
+            ></Image>
           </div>
         </SwiperSlide>
         <SwiperSlide style={{ width: "820px", height: "300px" }}>
           <div
             style={slideStyle}
-            className="relative bg-gray-200 flex items-center justify-center"
+            className="relative flex items-center justify-center"
           >
-            Slide 3
+            <Image
+              src="/images/pages/home/slide3_desc.png"
+              alt="슬라이드1"
+              fill
+            ></Image>
           </div>
         </SwiperSlide>
         <SwiperSlide style={{ width: "820px", height: "300px" }}>
           <div
             style={slideStyle}
-            className="relative bg-gray-200 flex items-center justify-center"
+            className="relative flex items-center justify-center"
           >
-            Slide 4
+            <Image
+              src="/images/pages/home/slide4_desc.png"
+              alt="슬라이드1"
+              fill
+            ></Image>
           </div>
         </SwiperSlide>
       </Swiper>

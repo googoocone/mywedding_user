@@ -224,7 +224,6 @@ export default function HallDetailPage() {
             loadedImagesCount++;
             if (loadedImagesCount === totalImages) {
               setAreImagesPreloaded(true);
-              // console.log("모든 홀 사진 프리로딩 완료:", currentHall.name);
             }
           };
           img.onerror = () => {
@@ -253,6 +252,13 @@ export default function HallDetailPage() {
     if (!currentHall) return [];
     return Array.from(new Set(currentHall.estimates.map((e) => e.date))).sort();
   }, [currentHall]);
+
+  const timesForHall = useMemo(() => {
+    if (!currentHall) return [];
+    return Array.from(new Set(currentHall.estimates.map((e) => e.time))).sort();
+  }, [currentHall]);
+
+  console.log("dateForHall", datesForHall);
 
   useEffect(() => {
     if (currentHall) {
@@ -382,6 +388,65 @@ export default function HallDetailPage() {
     setIsCalculatorModalOpen(false);
   };
 
+  // 선호시간대 분류
+
+  const isPreferTime = (timeString) => {
+    // 입력값이 없거나 문자열이 아니면 false 반환
+    if (!timeString || typeof timeString !== "string") {
+      return false;
+    }
+
+    // 선호 시간대 정의 (분 단위)
+    const preferredStartMinutes = 11 * 60; // 11:00 => 660분
+    const preferredEndMinutes = 14 * 60; // 14:00 => 840분
+
+    // "HH:MM" 또는 "H:MM" 형식의 시간을 분으로 변환하는 헬퍼 함수
+    const parseTimeToMinutes = (timeStr) => {
+      const parts = timeStr.split(":");
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+
+      // 유효한 시간인지 간단히 확인 (정규식으로 이미 걸러졌지만 안전장치)
+      if (
+        isNaN(hours) ||
+        isNaN(minutes) ||
+        hours < 0 ||
+        hours > 23 ||
+        minutes < 0 ||
+        minutes > 59
+      ) {
+        return NaN;
+      }
+      return hours * 60 + minutes;
+    };
+
+    // 입력 문자열에서 "HH:MM" 또는 "H:MM" 형식의 모든 시간 추출
+    // 예: "11:00 / 12:30, 15:00" -> ["11:00", "12:30", "15:00"]
+    const timeSlots = timeString.match(/\d{1,2}:\d{2}/g);
+
+    // 추출된 시간이 없으면 false 반환
+    if (!timeSlots) {
+      return false;
+    }
+
+    // 추출된 각 시간에 대해 선호 시간대인지 확인
+    for (const slotStr of timeSlots) {
+      const slotMinutes = parseTimeToMinutes(slotStr);
+      if (!isNaN(slotMinutes)) {
+        // 유효한 시간으로 변환되었다면
+        if (
+          slotMinutes >= preferredStartMinutes &&
+          slotMinutes <= preferredEndMinutes
+        ) {
+          return "메인타임(14:00 이내)"; // 선호 시간대에 해당하는 시간을 찾으면 true 반환
+        }
+      }
+    }
+
+    // 모든 시간을 확인했지만 선호 시간대에 해당하는 시간이 없으면 false 반환
+    return "서브타임(14:00 이후)";
+  };
+
   // --- 로딩 / 에러 / 데이터 없음 처리 ---
   if (isLoading)
     return (
@@ -420,7 +485,19 @@ export default function HallDetailPage() {
             name={hallCompany.name}
             address={hallCompany.address}
           />
-          <div className="w-full border-b border-gray-400 my-4"></div>
+
+          <div className="w-full text-left my-4">
+            <span className="px-3 py-1.5 bg-gray-700 text-white rounded-full">
+              {isPreferTime(displayEstimate?.time)}
+            </span>
+            {/* <span className="px-3 py-1.5 bg-[#ff767b] text-white rounded-full">
+              #
+              {currentHall?.estimates[0].type == "standard"
+                ? "표준 견적서"
+                : "할인 견적서"}
+            </span> */}
+          </div>
+          <div className="w-full border-b border-gray-400 my-2"></div>
           {displayEstimate ? (
             <>
               <BasicInfoSection

@@ -51,8 +51,6 @@ export default function OptionSection({
     return nameA.localeCompare(nameB, "ko"); // 'ko'는 한국어 기준으로 정렬
   });
 
-  console.log("Sorted hall_options", sortedOptions); // 정렬된 결과 확인 (개발 중)
-
   return (
     // 전체 섹션 컨테이너
     <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">

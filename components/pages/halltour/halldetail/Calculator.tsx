@@ -145,7 +145,7 @@ export default function Calculator({
       const comparePriceValue = compareMeal?.price ?? mealPrice.price;
       compareMealCost += count * comparePriceValue;
     });
-    console.log("filteredMealPrices", filteredMealPrices);
+
     // ✨ [수정됨] 옵션 비용 계산 시 is_required와 관계없이 selectedOptions 기준으로만 판단
     if (
       displayEstimate.estimate_options &&

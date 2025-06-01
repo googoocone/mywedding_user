@@ -213,65 +213,56 @@ export default function MapComponent({ halls, clientId }: MapComponentProps) {
   // --- JSX 렌더링 ---
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
-      <div id="map" style={{ width: "100%", height: "100%" }}></div>
+      <div id="map" style={{ width: "100%", height: "100%" }}>
+        {/* 지도가 렌더링되는 영역입니다. */}
+      </div>
 
       {selectedHall && (
         <div
-          className="bg-white hover:bg-gray-100"
-          style={{
-            position: "absolute",
-            bottom: "20%",
-            left: "50%",
-            transform: "translateX(-50%)",
-
-            padding: "10px 10px",
-            borderRadius: "10px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            zIndex: 1000,
-            textAlign: "center",
-            cursor: "pointer",
-            width: "470px",
-            height: "150px",
-          }}
+          className="absolute bottom-[10%] sm:bottom-[20%] left-1/2 -translate-x-1/2 
+                     p-[10px] rounded-lg shadow-lg bg-white hover:bg-gray-100
+                     z-[1000] text-center cursor-pointer w-[90%] sm:w-[470px] h-[150px]"
         >
           <Link
-            href={`/halltour/${selectedHall.id}`}
+            href={`/halltour/${selectedHall.name}`}
             passHref
-            className="flex items-center justify-start"
+            className="flex items-center justify-start no-underline text-current h-full" // Link에 스타일 적용, 높이 100% 추가
           >
-            <div className="w-[130px] h-[130px] relative">
+            <div className="w-[130px] h-[130px] relative flex-shrink-0">
+              {/* 이미지 영역이 줄어들지 않도록 flex-shrink-0 추가 */}
               <Image
-                src={selectedHall.halls[0].hall_photos[0].url}
+                src={
+                  selectedHall.halls[0]?.hall_photos[0]?.url ||
+                  "/placeholder-image.jpg"
+                } // 옵셔널 체이닝 및 대체 이미지 경로 추가
                 fill
                 alt={selectedHall.name}
-              ></Image>
+                className="object-cover rounded-md" // 이미지 내부 스타일링
+              />
             </div>
             <div
-              className="w-[320px] px-3 text-left flex flex-col gap-1"
-              style={{ textDecoration: "none", color: "inherit" }}
+              className="flex-1 min-w-0 px-3 text-left flex flex-col gap-1 justify-center" // 수직 중앙 정렬을 위해 justify-center 추가
             >
-              <h3 className="text-2xl font-semibold">{selectedHall.name}</h3>
-              <p className="text-sm ">{selectedHall.address}</p>
+              <h3 className="text-xl sm:text-2xl font-semibold truncate">
+                {selectedHall.name}
+              </h3>
+              {/* 긴 이름에 truncate 추가 */}
+              <p className="text-sm truncate">{selectedHall.address}</p>
+              {/* 긴 주소에 truncate 추가 */}
               <p className="text-sm">{selectedHall.phone || "정보 없음"}</p>
-              <small>(클릭하여 상세 정보 보기)</small>
+              <small className="text-gray-500">(클릭하여 상세 정보 보기)</small>
             </div>
           </Link>
           <button
-            className="hover:text-[#ff767b]"
+            className="absolute top-[10px] right-[10px] bg-transparent border-none 
+                       cursor-pointer text-gray-600 hover:text-red-500 p-1 rounded-full" // 아이콘 색상 및 호버, 패딩, 둥근 테두리 추가
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // 버튼 클릭이 Link로 전파되는 것을 막음
               setSelectedHall(null);
             }}
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
+            aria-label="닫기" // 접근성을 위한 aria-label 추가
           >
-            <ImCancelCircle></ImCancelCircle>
+            <ImCancelCircle size={20} /> {/* 아이콘 크기 조절 */}
           </button>
         </div>
       )}

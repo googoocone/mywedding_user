@@ -270,8 +270,7 @@ export default function Halltour() {
           ))}
         </div>
       </div>
-      {/* 슬라이드 부분 */}
-      <HallSwiper /> {/* 모바일 필터 버튼 */}
+      {/* <HallSwiper />  */}
       <button
         onClick={() => setMobileFilterOpen(true)}
         className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
@@ -333,6 +332,14 @@ export default function Halltour() {
                 )}
             </>
           )}
+          <div
+            onClick={() => router.push("/halltour/map")}
+            className="fixed bottom-14 left-1/2 transform -translate-x-1/2 shadow-lg px-5 py-2.5 bg-black/90 text-white rounded-full z-50 cursor-pointer hover:bg-black transition-colors"
+            // onClick 이벤트 핸들러를 여기에 추가하여 지도 보기 기능을 구현할 수 있습니다.
+            // 예: onClick={() => console.log("지도 보기 클릭됨")}
+          >
+            지도로보기
+          </div>
         </div>
         {/* 우측 viewed */}
         <div className="hidden md:flex">

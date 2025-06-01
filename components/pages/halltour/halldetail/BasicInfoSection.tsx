@@ -61,11 +61,8 @@ export default function BasicInfoSection({
     <div className="w-full flex flex-col items-start justify-center  sm:px-0">
       <div className="text-2xl font-[600] mb-4">홀 상세정보</div>
       <div className="w-full flex flex-col sm:flex-row items-start justify-start">
-        {" "}
-        {/* justify-center -> justify-start */}
         {/* 왼쪽 정보 컬럼 */}
         <div className="w-full sm:w-[375px] flex flex-col items-start gap-4 sm:pr-4">
-          {" "}
           {/* 오른쪽 패딩 추가 */}
           <div className="w-full flex items-center justify-between">
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start">
@@ -84,10 +81,8 @@ export default function BasicInfoSection({
             </div>
           </div>
           <div className="w-full flex items-start justify-between">
-            {" "}
             {/* items-start로 변경하여 여러 줄 타입 표시 용이 */}
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start pt-1">
-              {" "}
               {/* pt-1 추가로 수직 정렬 미세 조정 */}홀 타입
             </div>
             {/* ✨ [수정됨] 홀 타입 표시 방식 변경: 여러 타입을 태그 형태로 표시 */}
@@ -125,7 +120,6 @@ export default function BasicInfoSection({
         </div>
         {/* 오른쪽 정보 컬럼 */}
         <div className="w-full sm:w-[375px] flex flex-col items-start gap-4 mt-4 sm:mt-0 sm:pl-4">
-          {" "}
           {/* 왼쪽 패딩 추가 */}
           <div className="w-full flex items-center justify-between">
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start">

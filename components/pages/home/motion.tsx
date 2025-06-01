@@ -82,6 +82,26 @@ export default function Motion() {
             <Image src="/images/pages/home/toon_img_3.png" fill alt=""></Image>
           </motion.div>
         </div>
+        <div className="w-full h-[520px] flex items-center justify-center gap-20">
+          <motion.div
+            className="w-[512px] h-[512px] relative"
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInFromLeft}
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <Image src="/images/pages/home/toon_img_4.png" fill alt=""></Image>
+          </motion.div>
+          <motion.div
+            className="w-[478px] h-[349px] relative"
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInFromRight}
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <Image src="/images/pages/home/toon_desc_4.svg" fill alt=""></Image>
+          </motion.div>
+        </div>
       </div>
       <div className="sm:hidden w-full flex-col items-center justify-center gap-20 mt-20 px-3">
         <div className="w-full flex items-center justify-center ">
@@ -115,6 +135,17 @@ export default function Motion() {
             viewport={{ once: true, amount: 0.5 }}
           >
             <Image src="/images/pages/home/toon_3_mb.svg" fill alt=""></Image>
+          </motion.div>
+        </div>
+        <div className="w-full flex items-center justify-center ">
+          <motion.div
+            className="w-full h-[690px]  relative"
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInFromBottom}
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <Image src="/images/pages/home/toon_4_mb.svg" fill alt=""></Image>
           </motion.div>
         </div>
       </div>
