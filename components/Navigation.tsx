@@ -47,7 +47,7 @@ export default function Navigation() {
               ))}
             </ul>
           </div>
-          <div className="w-[180px] h-[40px] flex items-center justify-center">
+          <div className="w-[180px] h-[40px] flex items-center justify-end">
             {user ? (
               <HeaderButtons></HeaderButtons>
             ) : (
