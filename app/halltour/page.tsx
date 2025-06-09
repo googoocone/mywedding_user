@@ -1,10 +1,8 @@
-// Halltour.tsx
-
 "use client";
 
 import HallCard from "@/components/pages/halltour/HallCard";
 import HallFilter from "@/components/pages/halltour/HallFilter";
-import HallSwiper from "@/components/pages/halltour/HallSwiper";
+// import HallSwiper from "@/components/pages/halltour/HallSwiper"; // 사용되지 않는 것 같으면 삭제 고려
 // import HallViewed from "@/components/pages/halltour/HallViewed"; // 사용되지 않는 것 같으면 삭제 고려
 // import { weddingHallList } from "@/constants"; // 필요없으면 삭제 고려
 import { useState, useEffect, useMemo, useContext } from "react";
@@ -20,8 +18,9 @@ import AlertDialog from "@/components/common/AlertDialog";
 const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논현", "w웨딩"];
 
 export default function Halltour() {
-  let { user } = useContext(AuthContext);
-  console.log("user", user);
+  let { user, loading: userLoading } = useContext(AuthContext);
+  console.log("Halltour - user:", user); // 디버깅용
+
   const router = useRouter();
 
   // Zustand 스토어에서 필터 상태 가져오기
@@ -42,27 +41,36 @@ export default function Halltour() {
     (state) => state.setAppliedSearchTerm
   );
 
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false); // 모바일 필터 모달 상태 // 백엔드에서 불러온 원본 데이터를 저장하는 상태 // 백엔드 응답 구조는 WeddingCompany 객체들의 리스트 형태입니다. // 정확한 타입 정의가 있다면 WeddingCompany[]와 같이 사용하세요.
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [halls, setHalls] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [halls, setHalls] = useState<any[]>([]); // any[] 또는 WeddingCompany[] 타입 사용
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // 로그인 모달 상태만 유지
 
-  const [isLoading, setIsLoading] = useState(true); // 로딩 상태
-  const [error, setError] = useState<string | null>(null); // 에러 상태 // 백엔드에서 데이터 가져오는 useEffect 훅
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 페이지 진입 시 로그인 상태 확인 및 비로그인 시 로그인 유도 모달
+  useEffect(() => {
+    if (!userLoading) {
+      // 사용자 로딩이 완료된 후에만 실행
+      if (!user) {
+        setIsLoginModalOpen(true);
+      } else {
+        setIsLoginModalOpen(false); // 로그인 되어 있으면 모달 닫기
+      }
+    }
+  }, [user, userLoading]);
 
   useEffect(() => {
     const fetchWeddingHalls = async () => {
-      setIsLoading(true); // 데이터 페칭 시작 시 로딩 상태 활성화
+      setIsLoading(true);
       try {
-        // 백엔드 API 엔드포인트 URL
-        // 백엔드는 모든 업체와 그에 딸린 모든 홀, 사진, 견적 등을 포함한 리스트를 반환한다고 가정합니다.
         const apiEndpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_wedding_halls`; // 백엔드 라우터 경로 확인
 
         const response = await fetch(apiEndpoint, {
           headers: {
             "Content-Type": "application/json",
-          }, // credentials: 'include', // 필요시 추가
+          },
+          // credentials: 'include' // 초기 전체 웨딩홀 목록 조회 시에는 사용자별 데이터가 포함되지 않으므로 필요 없음
         });
 
         if (!response.ok) {
@@ -72,10 +80,10 @@ export default function Halltour() {
               response.statusText
             } - ${errorBody.detail || ""}`
           );
-        } // ✅ 백엔드에서 가져온 데이터는 업체 객체들의 리스트입니다. // 각 업체 객체는 모든 홀과 관련 정보를 halls 리스트 형태로 가집니다.
+        }
 
         const data: any[] = await response.json(); // 데이터 구조는 제공해주신 JSON 예시와 같습니다.
-        console.log("data", data);
+        console.log("Fetched halls data:", data); // 디버깅용
         setHalls(data); // 원본 데이터 그대로 상태에 저장
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
@@ -86,8 +94,10 @@ export default function Halltour() {
     };
 
     fetchWeddingHalls();
-  }, []); // 빈 배열: 컴포넌트가 처음 마운트될 때만 실행 // --- 필터링 로직 (useMemo 사용하여 성능 최적화) --- // 백엔드에서 가져온 원본 데이터를 가지고 필터링 및 데이터 재구성을 수행합니다.
+  }, []); // 빈 배열: 컴포넌트가 처음 마운트될 때만 실행
 
+  // --- 필터링 로직 (useMemo 사용하여 성능 최적화) ---
+  // 백엔드에서 가져온 원본 데이터를 가지고 필터링 및 데이터 재구성을 수행합니다.
   const filteredWeddingHalls = useMemo(() => {
     // 입력: halls는 백엔드에서 가져온 모든 WeddingCompany 객체들의 리스트입니다.
     //       각 Company 객체는 halls 속성에 해당 업체의 모든 Hall 객체 리스트를 가집니다.
@@ -101,7 +111,7 @@ export default function Halltour() {
     // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. ---
     const consolidatedCompanyData: Map<
       string,
-      { representativeCompany: any; allHalls: any[] }
+      { companyInfo: any; allHalls: any[] }
     > = new Map();
 
     for (const company of halls) {
@@ -188,9 +198,9 @@ export default function Halltour() {
 
     // 꽃 장식 필터 (주석 처리된 상태 유지)
     // if (selectedFlower && selectedFlower !== "전체") {
-    //   filtered = filtered.filter((company) => {
-    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
-    //   });
+    //   filtered = filtered.filter((company) => {
+    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
+    //   });
     // }
 
     return filtered; // 최종 필터링된 리스트 반환
@@ -207,38 +217,20 @@ export default function Halltour() {
     setAppliedSearchTerm(searchTerm);
   };
 
-  // 모달 렌더링 로직 //
-  // 공통 모달 렌더링==
-  useEffect(() => {
-    async function fetchInfo() {
-      console.log("user.phone", user.phone);
-      if (user?.phone === false) {
-        // user.phone이 false (인증되지 않음)일 때
-
-        setIsModalOpen(true); // 모달을 띄웁니다.
-      }
-    }
-    if (user !== undefined) {
-      fetchInfo();
-    }
-  }, [user]); // user 객체가 변경될 때마다 이펙트 실행
-
-  // ➍ 모달 확인 버튼 클릭 핸들러
-  const handleModalConfirm = () => {
-    setIsModalOpen(false); // 모달 닫기
-    router.push("/users"); // /users 페이지로 이동
+  // 로그인 유도 모달 확인/취소 핸들러
+  const handleLoginModalConfirm = () => {
+    setIsLoginModalOpen(false);
+    router.push("/login");
   };
 
-  // ➎ 모달 취소 버튼 클릭 핸들러 (모달만 닫고 페이지는 이동하지 않음)
   const handleModalClose = () => {
-    setIsModalOpen(false); // 모달 닫기
-    // 사용자가 '취소'를 눌렀을 때 특정 동작을 원한다면 여기에 추가
-    // 예를 들어, 다른 페이지로 이동시키거나, 모달을 계속 표시하는 등의 선택
+    // 로그인 모달과 휴대폰 인증 모달 모두 닫기 위함
+    setIsLoginModalOpen(false);
   };
 
   return (
     <div className="mt-[80px] w-full ">
-      {/* 검색창 부분 */} {/* ... (검색창 JSX) ... */}
+      {/* 검색창 부분 */}
       <div className="w-full sm:w-[1400px] max-w-full h-[90px] px-4 mb-5 sm:px-[80px] mx-auto flex flex-col items-center justify-center bg-white">
         <div className="w-full sm:w-[500px] h-[50px] border border-gray-300 rounded-full flex items-center">
           <input
@@ -270,7 +262,7 @@ export default function Halltour() {
           ))}
         </div>
       </div>
-      {/* <HallSwiper />  */}
+      {/* <HallSwiper /> */}
       <button
         onClick={() => setMobileFilterOpen(true)}
         className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
@@ -332,14 +324,6 @@ export default function Halltour() {
                 )}
             </>
           )}
-          <div
-            onClick={() => router.push("/halltour/map")}
-            className="fixed bottom-14 left-1/2 transform -translate-x-1/2 shadow-lg px-5 py-2.5 bg-black/90 text-white rounded-full z-50 cursor-pointer hover:bg-black transition-colors"
-            // onClick 이벤트 핸들러를 여기에 추가하여 지도 보기 기능을 구현할 수 있습니다.
-            // 예: onClick={() => console.log("지도 보기 클릭됨")}
-          >
-            지도로보기
-          </div>
         </div>
         {/* 우측 viewed */}
         <div className="hidden md:flex">
@@ -347,12 +331,12 @@ export default function Halltour() {
           <div className="flex-1 h-[3000px] "></div>
         </div>
       </div>
-      <AlertDialog // ➏ AlertDialog 컴포넌트 추가
-        isOpen={isModalOpen}
+      <AlertDialog // 로그인 유도 모달
+        isOpen={isLoginModalOpen}
         onClose={handleModalClose}
-        onConfirm={handleModalConfirm}
-        message="휴대폰 번호 인증을 하시면 모든 할인 견적서를 보실 수 있어요!"
-        confirmText="인증하러 가기"
+        onConfirm={handleLoginModalConfirm}
+        message="3초 만에 로그인하고 웨딩홀 견적서를 확인해보세요!"
+        confirmText="로그인하러 가기" // 버튼 텍스트 수정
       />
     </div>
   );
