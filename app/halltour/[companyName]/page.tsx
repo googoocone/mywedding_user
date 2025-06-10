@@ -44,17 +44,12 @@ interface Estimate {
   penalty_detail?: string;
   etcs?: { content: string }[];
 }
-
-// ImageModal에서 사용하는 Photo 타입을 여기서도 정의하거나 import 할 수 있습니다.
-// 여기서는 ImageModal의 Photo 인터페이스와 유사하게 가정합니다.
 interface HallPhoto {
   id?: number | string;
-  url: string | StaticImageData; // ImageModal의 Photo 인터페이스와 일치
+  url: string | StaticImageData;
   caption?: string;
   blurDataURL?: string;
-  // 실제 데이터에 width, height가 없다면 제거
 }
-
 interface Hall {
   id: number;
   name: string;
@@ -63,7 +58,7 @@ interface Hall {
   guarantees?: number;
   interval_minutes?: number;
   parking?: number;
-  hall_photos?: HallPhoto[]; // 타입을 HallPhoto[]로 명시
+  hall_photos?: HallPhoto[];
   hall_includes?: any[];
   estimates: Estimate[];
 }
@@ -95,8 +90,7 @@ export default function HallDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [areImagesPreloaded, setAreImagesPreloaded] = useState(false); // 이미지 프리로딩 완료 상태
-
+  const [areImagesPreloaded, setAreImagesPreloaded] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
@@ -129,41 +123,20 @@ export default function HallDetailPage() {
         const raw: any[] = await response.json();
         if (Array.isArray(raw) && raw.length > 0) {
           const base = raw[0];
-          const {
-            id,
-            phone,
-            accessibility,
-            lng,
-            address,
-            name,
-            homepage,
-            lat,
-            ceremony_times,
-          } = base;
-          // hall_photos의 타입을 HallPhoto[]로 캐스팅하거나 변환합니다.
-          // 백엔드 데이터 구조에 따라 이 부분은 조정이 필요할 수 있습니다.
           const mergedHalls: Hall[] = raw
-            .map((item) => {
-              const hallData = item.halls?.[0];
-              if (hallData && hallData.hall_photos) {
-                // hall_photos가 이미 HallPhoto[]와 호환되는 구조라고 가정
-                // 만약 아니라면, 여기서 HallPhoto[] 타입으로 변환 필요
-                // 예: hallData.hall_photos = hallData.hall_photos.map(p => ({ url: p.some_url_field, ... }))
-              }
-              return hallData;
-            })
+            .map((item) => item.halls?.[0])
             .filter(Boolean);
 
           setHallCompany({
-            id,
-            phone,
-            accessibility,
-            lng,
-            address,
-            name,
-            homepage,
-            lat,
-            ceremony_times,
+            id: base.id,
+            phone: base.phone,
+            accessibility: base.accessibility,
+            lng: base.lng,
+            address: base.address,
+            name: base.name,
+            homepage: base.homepage,
+            lat: base.lat,
+            ceremony_times: base.ceremony_times,
             halls: mergedHalls,
           });
         } else {
@@ -180,23 +153,100 @@ export default function HallDetailPage() {
     fetchDetailWeddingHall();
   }, [companyName]);
 
-  // --- 파생 상태 및 필터 로직 ---
-  const allHalls: Hall[] = hallCompany?.halls || [];
+  // --- ⭐️ 파생 상태 및 필터 로직 (대대적 수정) ---
 
+  const allHalls: Hall[] = hallCompany?.halls || [];
   const hallNames = useMemo(
     () => Array.from(new Set(allHalls.map((h) => h.name))),
     [allHalls]
   );
 
-  useEffect(() => {
-    if (!isLoading && allHalls.length > 0 && !hallNameFilter) {
-      setHallNameFilter(allHalls[0].name);
-    }
-  }, [isLoading, allHalls, hallNameFilter]);
+  // 현재 선택된 홀 정보
+  const currentHall = useMemo(
+    () => allHalls.find((h) => h.name === hallNameFilter),
+    [allHalls, hallNameFilter]
+  );
 
-  const currentHall = useMemo(() => {
-    return allHalls.find((h) => h.name === hallNameFilter);
-  }, [allHalls, hallNameFilter]);
+  // 현재 홀에서 선택 가능한 '견적서 종류' 목록 ('standard', 'admin')
+  const estimateTypesForDateButtons = useMemo(() => {
+    if (!currentHall) return [];
+    const types = new Set(currentHall.estimates.map((e) => e.type));
+    return Array.from(types).sort((a, b) => (a === "standard" ? -1 : 1)); // standard가 항상 앞으로
+  }, [currentHall]);
+
+  // ⭐️ [핵심] 선택된 '견적서 종류'에 따라 필터링된 '날짜' 목록
+  const filteredDates = useMemo(() => {
+    if (!currentHall || !estimateTypeFilter) return [];
+
+    const dates = new Set(
+      currentHall.estimates
+        .filter((e) => e.type === estimateTypeFilter)
+        .map((e) => e.date)
+    );
+    return Array.from(dates).sort(
+      (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+  }, [currentHall, estimateTypeFilter]);
+
+  // 현재 선택된 필터에 따라 화면에 표시될 최종 견적서 정보
+  const { standardEstimate, adminEstimate, displayEstimate } = useMemo(() => {
+    if (!currentHall) {
+      return {
+        standardEstimate: null,
+        adminEstimate: null,
+        displayEstimate: null,
+      };
+    }
+
+    const stdEst: Estimate | null =
+      currentHall.estimates.find((e) => e.type === "standard") || null;
+
+    const admEst: Estimate | null = dateFilter
+      ? currentHall.estimates.find(
+          (e) => e.date === dateFilter && e.type === "admin"
+        ) || null
+      : null;
+
+    const dispEst: Estimate | null =
+      estimateTypeFilter === "admin" && admEst ? admEst : stdEst;
+
+    return {
+      standardEstimate: stdEst,
+      adminEstimate: admEst,
+      displayEstimate: dispEst,
+    };
+  }, [currentHall, dateFilter, estimateTypeFilter]);
+
+  // --- ⭐️ 필터 기본값 설정 로직 (useEffect 리팩토링) ---
+
+  // 1. 로딩 완료 후 또는 홀 목록이 변경되면 첫번째 홀을 기본으로 선택
+  useEffect(() => {
+    if (!isLoading && !hallNameFilter && hallNames.length > 0) {
+      setHallNameFilter(hallNames[0]);
+    }
+  }, [isLoading, hallNames, hallNameFilter]);
+
+  // 2. 홀이 바뀌면, 견적서 종류 필터를 재설정하고, 이에 따라 날짜 필터도 초기화
+  useEffect(() => {
+    if (currentHall) {
+      const defaultType = estimateTypesForDateButtons.includes("admin")
+        ? "admin"
+        : "standard";
+      if (estimateTypeFilter !== defaultType) {
+        setEstimateTypeFilter(defaultType);
+        setDateFilter(""); // 타입 변경 시 날짜 필터도 초기화
+      }
+    }
+  }, [currentHall, estimateTypesForDateButtons]);
+
+  // 3. 필터링된 날짜 목록이 변경되면, 첫번째 날짜를 기본으로 선택
+  useEffect(() => {
+    if (filteredDates.length > 0 && !filteredDates.includes(dateFilter)) {
+      setDateFilter(filteredDates[0]);
+    } else if (filteredDates.length === 0) {
+      setDateFilter("");
+    }
+  }, [filteredDates, dateFilter]);
 
   // --- 이미지 프리로딩 로직 ---
   useEffect(() => {
@@ -234,8 +284,6 @@ export default function HallDetailPage() {
             }
           };
         } else {
-          // StaticImageData거나 URL이 문자열이 아닌 경우 (예: 이미 로드된 next/image 객체)
-          // 이 경우 브라우저 레벨의 프리로딩은 불필요하거나 다르게 처리해야 함
           loadedImagesCount++;
           if (loadedImagesCount === totalImages) {
             setAreImagesPreloaded(true);
@@ -243,123 +291,16 @@ export default function HallDetailPage() {
         }
       });
     } else {
-      // 현재 홀에 사진이 없거나 hall_photos가 없으면 프리로딩 완료 상태로 간주
       setAreImagesPreloaded(true);
     }
-  }, [currentHall]); // currentHall이 바뀔 때마다 프리로딩 실행
-
-  const datesForHall = useMemo(() => {
-    if (!currentHall) return [];
-    return Array.from(new Set(currentHall.estimates.map((e) => e.date))).sort();
   }, [currentHall]);
-
-  const timesForHall = useMemo(() => {
-    if (!currentHall) return [];
-    return Array.from(new Set(currentHall.estimates.map((e) => e.time))).sort();
-  }, [currentHall]);
-
-  console.log("dateForHall", datesForHall);
-
-  useEffect(() => {
-    if (currentHall) {
-      if (datesForHall.length > 0) {
-        if (!dateFilter || !datesForHall.includes(dateFilter)) {
-          const adminDate = datesForHall.find((d) =>
-            currentHall.estimates.some(
-              (e) => e.date === d && e.type === "admin"
-            )
-          );
-          setDateFilter(adminDate || datesForHall[0]);
-        }
-      } else {
-        setDateFilter("");
-      }
-    }
-  }, [currentHall, datesForHall, dateFilter]);
-
-  const estimateTypesForDateButtons: string[] = useMemo(() => {
-    if (!currentHall) return [];
-    const types: Set<string> = new Set();
-    if (currentHall.estimates.some((e) => e.type === "standard")) {
-      types.add("standard");
-    }
-    if (
-      dateFilter &&
-      currentHall.estimates.some(
-        (e) => e.date === dateFilter && e.type === "admin"
-      )
-    ) {
-      types.add("admin");
-    }
-    return Array.from(types).sort((a, b) => {
-      if (a === "standard") return -1;
-      if (b === "standard") return 1;
-      return 0;
-    });
-  }, [currentHall, dateFilter]);
-
-  useEffect(() => {
-    if (currentHall) {
-      if (estimateTypesForDateButtons.length > 0) {
-        const isCurrentTypeValid =
-          estimateTypesForDateButtons.includes(estimateTypeFilter);
-        if (!estimateTypeFilter || !isCurrentTypeValid) {
-          if (estimateTypesForDateButtons.includes("admin")) {
-            setEstimateTypeFilter("admin");
-          } else if (estimateTypesForDateButtons.includes("standard")) {
-            setEstimateTypeFilter("standard");
-          } else {
-            setEstimateTypeFilter(estimateTypesForDateButtons[0]);
-          }
-        }
-      } else {
-        setEstimateTypeFilter("");
-      }
-    }
-  }, [
-    currentHall,
-    dateFilter,
-    estimateTypesForDateButtons,
-    estimateTypeFilter,
-  ]);
-
-  const { standardEstimate, adminEstimate, displayEstimate } = useMemo(() => {
-    if (!currentHall) {
-      return {
-        standardEstimate: null,
-        adminEstimate: null,
-        displayEstimate: null,
-      };
-    }
-    const stdEst: Estimate | null =
-      currentHall.estimates.find((e) => e.type === "standard") || null;
-    let admEst: Estimate | null = null;
-    if (dateFilter) {
-      admEst =
-        currentHall.estimates.find(
-          (e) => e.date === dateFilter && e.type === "admin"
-        ) || null;
-    }
-    let dispEst: Estimate | null = null;
-    if (estimateTypeFilter === "admin" && admEst) {
-      dispEst = admEst;
-    } else {
-      dispEst = stdEst;
-    }
-    return {
-      standardEstimate: stdEst,
-      adminEstimate: admEst,
-      displayEstimate: dispEst,
-    };
-  }, [currentHall, dateFilter, estimateTypeFilter]);
 
   // --- 이벤트 핸들러 ---
   const handleShowAllPhotos = () => {
-    // 선택적으로 모든 이미지가 프리로딩될 때까지 기다리거나, 사용자에게 알림을 줄 수 있습니다.
-    // if (!areImagesPreloaded) {
-    //   alert("사진을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
-    //   return;
-    // }
+    if (!areImagesPreloaded) {
+      alert("사진을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
     if (
       currentHall &&
       currentHall.hall_photos &&
@@ -367,7 +308,6 @@ export default function HallDetailPage() {
     ) {
       setShowImageModal(true);
     } else {
-      // 사진이 없을 경우의 처리 (예: 알림)
       alert("표시할 사진이 없습니다.");
     }
   };
@@ -389,24 +329,18 @@ export default function HallDetailPage() {
   };
 
   // 선호시간대 분류
-
   const isPreferTime = (timeString) => {
-    // 입력값이 없거나 문자열이 아니면 false 반환
     if (!timeString || typeof timeString !== "string") {
       return false;
     }
 
-    // 선호 시간대 정의 (분 단위)
     const preferredStartMinutes = 11 * 60; // 11:00 => 660분
     const preferredEndMinutes = 14 * 60; // 14:00 => 840분
 
-    // "HH:MM" 또는 "H:MM" 형식의 시간을 분으로 변환하는 헬퍼 함수
     const parseTimeToMinutes = (timeStr) => {
       const parts = timeStr.split(":");
       const hours = parseInt(parts[0], 10);
       const minutes = parseInt(parts[1], 10);
-
-      // 유효한 시간인지 간단히 확인 (정규식으로 이미 걸러졌지만 안전장치)
       if (
         isNaN(hours) ||
         isNaN(minutes) ||
@@ -420,30 +354,23 @@ export default function HallDetailPage() {
       return hours * 60 + minutes;
     };
 
-    // 입력 문자열에서 "HH:MM" 또는 "H:MM" 형식의 모든 시간 추출
-    // 예: "11:00 / 12:30, 15:00" -> ["11:00", "12:30", "15:00"]
     const timeSlots = timeString.match(/\d{1,2}:\d{2}/g);
 
-    // 추출된 시간이 없으면 false 반환
     if (!timeSlots) {
       return false;
     }
 
-    // 추출된 각 시간에 대해 선호 시간대인지 확인
     for (const slotStr of timeSlots) {
       const slotMinutes = parseTimeToMinutes(slotStr);
       if (!isNaN(slotMinutes)) {
-        // 유효한 시간으로 변환되었다면
         if (
           slotMinutes >= preferredStartMinutes &&
           slotMinutes <= preferredEndMinutes
         ) {
-          return "메인타임(14:00 이내)"; // 선호 시간대에 해당하는 시간을 찾으면 true 반환
+          return "메인타임(14:00 이내)";
         }
       }
     }
-
-    // 모든 시간을 확인했지만 선호 시간대에 해당하는 시간이 없으면 false 반환
     return "서브타임(14:00 이후)";
   };
 
@@ -467,6 +394,87 @@ export default function HallDetailPage() {
       </div>
     );
 
+  // --- 필터 UI를 렌더링하는 함수 (데스크톱/모바일 재사용) ---
+  const renderFilterContent = () => (
+    <>
+      {/* 홀 이름 필터 */}
+      <div className="flex flex-col space-y-1 mb-4">
+        <span className="text-sm font-medium text-gray-700">홀 이름</span>
+        <div className="flex flex-wrap gap-2 my-2">
+          {hallNames.map((name) => (
+            <button
+              key={name}
+              onClick={() => setHallNameFilter(name)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                hallNameFilter === name
+                  ? "bg-[#ffe4de] text-[#ff767b]"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* 견적서 종류 필터 */}
+      <div className="flex flex-col space-y-1 mb-4">
+        <span className="text-sm font-medium text-gray-700">견적서 종류</span>
+        <div className="flex flex-wrap gap-2 my-2">
+          {estimateTypesForDateButtons.map((type) => (
+            <button
+              key={type}
+              onClick={() => setEstimateTypeFilter(type)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                estimateTypeFilter === type
+                  ? "bg-[#ffe4de] text-[#ff767b]"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {type === "standard" ? "일반 견적서" : "할인 견적서"}
+            </button>
+          ))}
+          {estimateTypesForDateButtons.length === 0 && (
+            <span className="text-xs text-gray-400">견적서 정보 없음</span>
+          )}
+        </div>
+      </div>
+      {/* 날짜 필터 */}
+      <div className="flex flex-col space-y-1">
+        <span className="text-sm font-medium text-gray-700">날짜 선택</span>
+        <div className="flex flex-wrap gap-2 my-2">
+          {/* ⭐️ [핵심] filteredDates 사용 */}
+          {filteredDates.map((date: string) => {
+            const parsedDate = new Date(date);
+            const year = parsedDate.getFullYear();
+            const month = parsedDate.getMonth() + 1;
+            const weekday = parsedDate.toLocaleDateString("ko-KR", {
+              weekday: "short",
+            });
+            return (
+              <button
+                key={date}
+                onClick={() => setDateFilter(date)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
+                  dateFilter === date
+                    ? "bg-[#ffe4de] text-[#ff767b]"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {`${year}.${month < 10 ? "0" + month : month} (${weekday})`}
+              </button>
+            );
+          })}
+          {/* ⭐️ 필터링된 날짜가 없을 때 메시지 표시 */}
+          {estimateTypeFilter && filteredDates.length === 0 && currentHall && (
+            <span className="text-xs text-gray-400">
+              선택하신 종류의 견적이 있는 날짜가 없습니다.
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   // --- 렌더링 ---
   return (
     <div className="w-full relative flex flex-col items-center justify-center pb-20 lg:pb-0">
@@ -485,37 +493,38 @@ export default function HallDetailPage() {
             name={hallCompany.name}
             address={hallCompany.address}
           />
-
-          <div className="w-full text-left my-4">
+          <div className="w-full text-right text-sm my-3">
             <span className="px-3 py-1.5 bg-gray-700 text-white rounded-full">
               {isPreferTime(displayEstimate?.time)}
             </span>
-            {/* <span className="px-3 py-1.5 bg-[#ff767b] text-white rounded-full">
-              #
-              {currentHall?.estimates[0].type == "standard"
-                ? "표준 견적서"
-                : "할인 견적서"}
-            </span> */}
           </div>
           <div className="w-full border-b border-gray-400 my-2"></div>
           {displayEstimate ? (
             <>
+              {/* 💡 제안: 가격 비교를 위해 standardEstimate와 adminEstimate를 prop으로 전달 */}
               <BasicInfoSection
+                standardEstimate={standardEstimate}
+                adminEstimate={adminEstimate}
+                displayEstimate={displayEstimate} // 실제 표시될 데이터
                 name={currentHall?.name || ""}
                 mood={currentHall?.mood || ""}
                 time={hallCompany.ceremony_times || ""}
                 hall_type={currentHall?.type || ""}
-                meal_types={displayEstimate.meal_prices || ""}
                 guarantee={currentHall?.guarantees || 0}
                 interval_minutes={currentHall?.interval_minutes || 0}
                 parking={currentHall?.parking || 0}
+                // 기존에 넘기던 props는 displayEstimate에서 꺼내도록 BasicInfoSection 내부 수정 필요
                 price={displayEstimate.hall_price}
-                meal_price={displayEstimate.meal_prices || []}
+                meal_prices={displayEstimate.meal_prices || []}
               />
               <IncludedSection
                 hall_includes={currentHall?.hall_includes || []}
               />
               <OptionSection
+                standardEstimate={standardEstimate}
+                adminEstimate={adminEstimate}
+                displayEstimate={displayEstimate}
+                // 기존에 넘기던 props는 displayEstimate에서 꺼내도록 OptionSection 내부 수정 필요
                 hall_options={displayEstimate.estimate_options || []}
               />
               <EtcSection
@@ -542,94 +551,9 @@ export default function HallDetailPage() {
         {/* 오른쪽 필터 & 계산기 (데스크톱용) */}
         <div className="w-full lg:w-[400px] mt-10 lg:mt-10 hidden lg:block">
           <div className="bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg space-y-2 mb-4 top-4">
-            {/* 홀 이름 필터 */}
-            <div className="flex flex-col space-y-1">
-              <span className="text-sm font-medium text-gray-700">홀 이름</span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {hallNames.map((name) => (
-                  <button
-                    key={name}
-                    onClick={() => setHallNameFilter(name)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                      hallNameFilter === name
-                        ? "bg-[#ffe4de] text-[#ff767b]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* 견적서 종류 필터 */}
-            <div className="flex flex-col space-y-1">
-              <span className="text-sm font-medium text-gray-700">
-                견적서 종류
-              </span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {estimateTypesForDateButtons.map((type: string) => (
-                  <button
-                    key={type}
-                    onClick={() => setEstimateTypeFilter(type)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                      estimateTypeFilter === type
-                        ? "bg-[#ffe4de] text-[#ff767b]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {type === "standard"
-                      ? "일반 견적서"
-                      : type === "admin"
-                      ? "할인 견적서"
-                      : type}
-                  </button>
-                ))}
-                {estimateTypesForDateButtons.length === 0 && (
-                  <span className="text-xs text-gray-400">
-                    견적서 정보 없음
-                  </span>
-                )}
-              </div>
-            </div>
-            {/* 날짜 필터 */}
-            <div className="flex flex-col space-y-1">
-              <span className="text-sm font-medium text-gray-700">
-                날짜 선택
-              </span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {datesForHall.map((date: string) => {
-                  const parsedDate = new Date(date);
-                  const year = parsedDate.getFullYear();
-                  const month = parsedDate.getMonth() + 1;
-                  const weekday = parsedDate.toLocaleDateString("ko-KR", {
-                    weekday: "short",
-                  });
-                  return (
-                    <button
-                      key={date}
-                      onClick={() => setDateFilter(date)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                        dateFilter === date
-                          ? "bg-[#ffe4de] text-[#ff767b]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {`${year}.${
-                        month < 10 ? "0" + month : month
-                      } (${weekday})`}
-                    </button>
-                  );
-                })}
-                {datesForHall.length === 0 && currentHall && (
-                  <span className="text-xs text-gray-400">
-                    예약 가능 날짜 정보 없음
-                  </span>
-                )}
-              </div>
-            </div>
+            {renderFilterContent()}
           </div>
           <div className="sticky top-[calc(4rem+180px)]">
-            {" "}
             <Calculator
               standardEstimate={standardEstimate}
               adminEstimate={adminEstimate}
@@ -669,7 +593,6 @@ export default function HallDetailPage() {
               isCalculatorModalOpen ? "text-[#ff767b]" : "text-gray-500"
             }`}
           />
-          견적 계산기
         </button>
       </div>
       {/* --- 모바일 필터 모달 (하단 시트 형태) --- */}
@@ -696,91 +619,7 @@ export default function HallDetailPage() {
                 <IoClose size={24} />
               </button>
             </div>
-            {/* 홀 이름 필터 */}
-            <div className="flex flex-col space-y-1 mb-4">
-              <span className="text-sm font-medium text-gray-700">홀 이름</span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {hallNames.map((name) => (
-                  <button
-                    key={name}
-                    onClick={() => setHallNameFilter(name)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                      hallNameFilter === name
-                        ? "bg-[#ffe4de] text-[#ff767b]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* 견적서 종류 필터 */}
-            <div className="flex flex-col space-y-1 mb-4">
-              <span className="text-sm font-medium text-gray-700">
-                견적서 종류
-              </span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {estimateTypesForDateButtons.map((type: string) => (
-                  <button
-                    key={type}
-                    onClick={() => setEstimateTypeFilter(type)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                      estimateTypeFilter === type
-                        ? "bg-[#ffe4de] text-[#ff767b]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {type === "standard"
-                      ? "일반 견적서"
-                      : type === "admin"
-                      ? "할인 견적서"
-                      : type}
-                  </button>
-                ))}
-                {estimateTypesForDateButtons.length === 0 && (
-                  <span className="text-xs text-gray-400">
-                    견적서 정보 없음
-                  </span>
-                )}
-              </div>
-            </div>
-            {/* 날짜 필터 */}
-            <div className="flex flex-col space-y-1">
-              <span className="text-sm font-medium text-gray-700">
-                날짜 선택
-              </span>
-              <div className="flex flex-wrap gap-2 my-2">
-                {datesForHall.map((date: string) => {
-                  const parsedDate = new Date(date);
-                  const year = parsedDate.getFullYear();
-                  const month = parsedDate.getMonth() + 1;
-                  const weekday = parsedDate.toLocaleDateString("ko-KR", {
-                    weekday: "short",
-                  });
-                  return (
-                    <button
-                      key={date}
-                      onClick={() => setDateFilter(date)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
-                        dateFilter === date
-                          ? "bg-[#ffe4de] text-[#ff767b]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {`${year}.${
-                        month < 10 ? "0" + month : month
-                      } (${weekday})`}
-                    </button>
-                  );
-                })}
-                {datesForHall.length === 0 && currentHall && (
-                  <span className="text-xs text-gray-400">
-                    예약 가능 날짜 정보 없음
-                  </span>
-                )}
-              </div>
-            </div>
+            {renderFilterContent()}
             <button
               onClick={closeModal}
               className="mt-6 w-full bg-[#ff767b] text-white py-3 rounded-lg font-semibold hover:bg-[#ff5a5f] transition-colors"
@@ -806,9 +645,7 @@ export default function HallDetailPage() {
             }}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                견적 계산기
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-800"></h3>
               <button
                 onClick={closeModal}
                 className="text-gray-500 hover:text-gray-700 p-1"
@@ -829,12 +666,8 @@ export default function HallDetailPage() {
       {/* Image Modal */}
       {showImageModal && currentHall && currentHall.hall_photos && (
         <ImageModal
-          // currentHall.hall_photos가 이미 ImageModal의 Photo[]와 호환된다고 가정
-          // 그렇지 않다면 여기서 필요한 형태로 매핑해야 합니다.
-          // 예: photos={currentHall.hall_photos.map(p => ({ url: p.imageUrl, caption: p.desc }))}
           photos={currentHall.hall_photos}
           onClose={handleCloseModal}
-          // initialIndex는 필요에 따라 PhotoSection에서 클릭된 이미지 인덱스를 전달받도록 수정 가능
         />
       )}
     </div>

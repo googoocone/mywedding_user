@@ -20,7 +20,7 @@ export default function OptionDescDisplay({ item }: OptionDescDisplayProps) {
   const hasDesc = item.description && item.description.trim() !== "";
 
   return (
-    <div className="flex gap-1 items-baseline">
+    <div className="flex text-sm sm:text-md gap-1 items-baseline">
       <div className="w-6 flex-grow text-left relative text-gray-700">
         {item.name}
         {hasDesc && (

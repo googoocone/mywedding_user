@@ -170,8 +170,8 @@ export default function HallInfoSection({
   }, [lat, lng]); // lat 또는 lng prop이 변경될 때마다 effect 재실행
 
   return (
-    <div className="w-full flex flex-col items-start justify-center px-3 sm:px-0">
-      <div className="text-2xl font-[600] mb-4">식장 정보</div>
+    <div className="w-full text-sm sm:text-md flex flex-col items-start justify-center px-3 sm:px-0">
+      <div className="text-xl font-[600] mb-4">식장 정보</div>
       <div className="w-full flex items-center justify-center">
         {/* 이 부분이 기본정보의 요소들이 들어가는 부분 */}
         {/* max-w를 1250px 등으로 제한하는 상위 컨테이너 안에 있어야 합니다. */}

@@ -2,37 +2,57 @@
 
 "use client";
 
-import { useMemo } from "react"; // useState는 현재 이 컴포넌트에서 불필요
-import MealPriceDisplay from "./MealPriceDisplay"; // 경로 확인 필요
-// import { BsQuestionCircle } from "react-icons/bs"; // 현재 미사용으로 주석 처리
+import { useMemo } from "react";
+import MealPriceDisplay from "./MealPriceDisplay"; // 이 컴포넌트도 수정이 필요합니다.
 
-// BasicInfoSectionProps 인터페이스 정의 (타입 안정성 강화)
-interface MealPriceData {
-  // MealPriceDisplay에서 사용할 수 있는 타입 예시
-  id: number | string;
+// --- 타입 정의 (상위 컴포넌트와 일치시킴) ---
+interface MealPrice {
+  id: number;
+  estimate_id: number;
   meal_type: string;
   category: string;
   price: number;
   extra?: string;
 }
 
+interface EstimateOption {
+  id: number;
+  name: string;
+  price: number;
+  is_required: boolean;
+}
+
+interface Estimate {
+  id: number;
+  hall_id: number;
+  hall_price: number;
+  date: string;
+  time: string;
+  type: "standard" | "admin";
+  meal_prices: MealPrice[];
+  estimate_options: EstimateOption[];
+  penalty_amount?: number;
+  penalty_detail?: string;
+  etcs?: { content: string }[];
+}
+
+// ⭐️ Props 인터페이스를 수정하여 전체 견적서 정보를 받도록 변경
 interface BasicInfoSectionProps {
+  standardEstimate: Estimate | null;
+  adminEstimate: Estimate | null;
+  displayEstimate: Estimate | null; // 현재 화면에 표시될 견적서
   name?: string | null;
   mood?: string | null;
   time?: string | null;
-  hall_type?: string | null; // ✨ 쉼표로 구분된 문자열 또는 단일 문자열
-  // meal_types는 현재 JSX에서 직접 사용되지 않고, meal_price를 사용하고 있습니다.
-  // 만약 meal_price가 meal_types와 동일한 데이터를 의미한다면 하나로 통일하는 것이 좋습니다.
-  // 여기서는 meal_price를 MealPriceData[] 타입으로 가정합니다.
+  hall_type?: string | null;
   guarantee?: number | null;
   parking?: number | null;
   interval_minutes?: number | null;
-  price?: number | null;
-  meal_price?: MealPriceData[];
-  meal_types: string[];
 }
 
 export default function BasicInfoSection({
+  standardEstimate,
+  displayEstimate,
   name,
   mood,
   time,
@@ -40,13 +60,42 @@ export default function BasicInfoSection({
   guarantee,
   parking,
   interval_minutes,
-  price,
-  meal_price,
-  meal_types,
 }: BasicInfoSectionProps) {
+  // 💡 표시할 견적 정보가 없으면 아무것도 렌더링하지 않음 (방어 코드)
+  if (!displayEstimate) {
+    return null;
+  }
+
+  // ⭐️ 표시될 데이터는 displayEstimate에서 추출
+  const { hall_price, meal_prices } = displayEstimate;
+
+  // ⭐️ [가격 비교 로직] 대관료 비교
+  const standardHallPrice = standardEstimate?.hall_price;
+  const isHallPriceDiscounted =
+    displayEstimate.type === "admin" &&
+    standardHallPrice !== undefined &&
+    hall_price !== standardHallPrice;
+
+  // ⭐️ [가격 비교 로직] 식대 비교 결과를 반환하는 함수
+  const getMealComparison = (currentMeal: MealPrice) => {
+    if (displayEstimate.type !== "admin" || !standardEstimate) {
+      return { isDiscounted: false, standardPrice: undefined };
+    }
+    const standardMeal = standardEstimate.meal_prices.find(
+      (m) =>
+        m.category === currentMeal.category &&
+        m.meal_type === currentMeal.meal_type
+    );
+    return {
+      isDiscounted: standardMeal
+        ? currentMeal.price !== standardMeal.price
+        : false,
+      standardPrice: standardMeal?.price,
+    };
+  };
+
   const cleanedStringTime = time?.replace(/"/g, "") || "";
 
-  // ✨ hall_type 문자열을 분리하여 배열로 만들고, 각 요소의 공백 제거 및 빈 요소 필터링
   const hallTypesArray = useMemo(() => {
     if (hall_type && typeof hall_type === "string") {
       return hall_type
@@ -58,12 +107,11 @@ export default function BasicInfoSection({
   }, [hall_type]);
 
   return (
-    <div className="w-full flex flex-col items-start justify-center  sm:px-0">
-      <div className="text-2xl font-[600] mb-4">홀 상세정보</div>
+    <div className="w-full text-sm sm:text-md flex flex-col items-start justify-center sm:px-0">
+      <div className="text-xl font-[600] mb-4">홀 상세정보</div>
       <div className="w-full flex flex-col sm:flex-row items-start justify-start">
         {/* 왼쪽 정보 컬럼 */}
         <div className="w-full sm:w-[375px] flex flex-col items-start gap-4 sm:pr-4">
-          {/* 오른쪽 패딩 추가 */}
           <div className="w-full flex items-center justify-between">
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start">
               홀 이름
@@ -81,11 +129,9 @@ export default function BasicInfoSection({
             </div>
           </div>
           <div className="w-full flex items-start justify-between">
-            {/* items-start로 변경하여 여러 줄 타입 표시 용이 */}
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start pt-1">
-              {/* pt-1 추가로 수직 정렬 미세 조정 */}홀 타입
+              홀 타입
             </div>
-            {/* ✨ [수정됨] 홀 타입 표시 방식 변경: 여러 타입을 태그 형태로 표시 */}
             <div className="flex-1 pl-2 flex flex-wrap items-center justify-end sm:justify-start gap-1">
               {hallTypesArray.length > 0 ? (
                 hallTypesArray.map((type, index) => (
@@ -119,31 +165,43 @@ export default function BasicInfoSection({
           </div>
         </div>
         {/* 오른쪽 정보 컬럼 */}
-        <div className="w-full sm:w-[375px] flex flex-col items-start gap-4 mt-4 sm:mt-0 sm:pl-4">
-          {/* 왼쪽 패딩 추가 */}
+        <div className="w-full sm:w-[375px] flex flex-col text-sm items-start gap-4 mt-4 sm:mt-0 sm:pl-4">
           <div className="w-full flex items-center justify-between">
             <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start">
               대관료
             </div>
-            <div className="flex-1 pl-2 text-gray-700 text-right sm:text-left">
-              {price != null ? price.toLocaleString() + "원" : "정보 없음"}
+            {/* ⭐️ [JSX 수정] 대관료 강조 표시 */}
+            <div className="flex pl-2 text-gray-700 text-right sm:text-left flex items-center justify-end sm:justify-start">
+              {isHallPriceDiscounted && standardHallPrice !== undefined && (
+                <span className="text-sm text-gray-400 line-through mr-2">
+                  {standardHallPrice.toLocaleString()}원
+                </span>
+              )}
+              <span
+                className={
+                  isHallPriceDiscounted ? "text-red-500 font-bold" : ""
+                }
+              >
+                {hall_price != null
+                  ? hall_price.toLocaleString() + "원"
+                  : "정보 없음"}
+              </span>
             </div>
           </div>
-          <div className="w-full flex items-start ">
-            {/* 이 부모 div에 flex 및 items-start 추가 */}
-            <div className="w-[70px] sm:w-[80px] flex-shrink-0 text-gray-500 self-start">
+          <div className="w-full flex items-start">
+            <div className="w-[100px] sm:w-[120px] flex-shrink-0 text-gray-500 self-start">
               식대
             </div>
             <div className="w-full flex-1 pl-2 flex flex-col items-end sm:items-start gap-1 text-gray-700">
-              {meal_price && meal_price.length > 0 ? (
-                // meal_price 배열을 복사한 후 가격(price)에 따라 내림차순으로 정렬합니다.
-                // MealPriceDisplay 컴포넌트는 각 item을 한 줄로 표시하도록 디자인되어 있습니다.
-                [...meal_price] // 원본 배열을 변경하지 않기 위해 스프레드 연산자로 복사본을 만듭니다.
-                  .sort((a, b) => b.price - a.price) // price를 기준으로 내림차순 정렬 (b.price - a.price)
+              {meal_prices && meal_prices.length > 0 ? (
+                [...meal_prices]
+                  .sort((a, b) => b.price - a.price)
                   .map((item, index) => (
+                    // ⭐️ [JSX 수정] 가격 비교 결과를 MealPriceDisplay에 prop으로 전달
                     <MealPriceDisplay
                       key={item.id || `meal-price-${index}`}
-                      item={item} // 이 item이 MealPriceDisplay의 props로 전달됩니다.
+                      item={item}
+                      comparisonResult={getMealComparison(item)} // 비교 결과 전달
                     />
                   ))
               ) : (
@@ -169,7 +227,8 @@ export default function BasicInfoSection({
           </div>
         </div>
       </div>
-      <div className="w-full border border-gray-300 my-4"></div>
+      <div className="w-full border-b border-gray-300 my-8"></div>{" "}
+      {/* 간격 조정을 위해 border-t 제거 및 my-8로 변경 */}
     </div>
   );
 }
