@@ -30,6 +30,13 @@ const guidebookList = [
     img: "/images/pages/guidebook/guidebook_4.png",
     url: "https://blog.naver.com/wedding-march/223877498289",
   },
+  {
+    id: 5,
+    title: "웨딩 메이크업 준비하기",
+    desc: "",
+    img: "/images/pages/guidebook/guidebook_5.png",
+    url: "https://blog.naver.com/wedding-march/223894961983",
+  },
 ];
 
 export default function GuideBook() {
