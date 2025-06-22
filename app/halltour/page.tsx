@@ -2,9 +2,6 @@
 
 import HallCard from "@/components/pages/halltour/HallCard";
 import HallFilter from "@/components/pages/halltour/HallFilter";
-// import HallSwiper from "@/components/pages/halltour/HallSwiper"; // 사용되지 않는 것 같으면 삭제 고려
-// import HallViewed from "@/components/pages/halltour/HallViewed"; // 사용되지 않는 것 같으면 삭제 고려
-// import { weddingHallList } from "@/constants"; // 필요없으면 삭제 고려
 import { useState, useEffect, useMemo, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "@/context/AuthContext";
@@ -45,6 +42,12 @@ export default function Halltour() {
   const [halls, setHalls] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // ✅ 추가: 좋아요 상태를 저장할 상태 (key: wedding_company_id, value: boolean)
+  const [likeStatuses, setLikeStatuses] = useState<{ [key: number]: boolean }>(
+    {}
+  );
+  // ✅ 추가: 좋아요 상태 로딩 상태
+  const [isLikesLoading, setIsLikesLoading] = useState(false);
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // 로그인 모달 상태만 유지
 
@@ -61,51 +64,89 @@ export default function Halltour() {
   }, [user, userLoading]);
 
   useEffect(() => {
-    const fetchWeddingHalls = async () => {
+    const fetchWeddingHallsAndLikes = async () => {
       setIsLoading(true);
+      setIsLikesLoading(true); // 좋아요 상태 로딩 시작
+
       try {
-        const apiEndpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_wedding_halls`; // 백엔드 라우터 경로 확인
+        // 1. 웨딩홀 목록 가져오기
+        const hallsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_wedding_halls`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-        const response = await fetch(apiEndpoint, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: 'include' // 초기 전체 웨딩홀 목록 조회 시에는 사용자별 데이터가 포함되지 않으므로 필요 없음
-        });
-
-        if (!response.ok) {
-          const errorBody = await response.json();
+        if (!hallsResponse.ok) {
+          const errorBody = await hallsResponse.json();
           throw new Error(
-            `Failed to fetch halls: ${response.status} ${
-              response.statusText
+            `Failed to fetch halls: ${hallsResponse.status} ${
+              hallsResponse.statusText
             } - ${errorBody.detail || ""}`
           );
         }
 
-        const data: any[] = await response.json(); // 데이터 구조는 제공해주신 JSON 예시와 같습니다.
-        console.log("Fetched halls data:", data); // 디버깅용
-        setHalls(data); // 원본 데이터 그대로 상태에 저장
+        const hallData: any[] = await hallsResponse.json();
+        console.log("Fetched halls data:", hallData);
+        setHalls(hallData); // 원본 데이터 그대로 상태에 저장
+
+        // 2. 웨딩홀 ID 목록 추출
+        const hallIds = hallData.map((hall: any) => hall.id);
+
+        // 3. 사용자가 로그인했다면, 좋아요 상태 일괄 가져오기
+        if (user && hallIds.length > 0) {
+          try {
+            const likesResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/likes/status/batch`, // ✅ 새로 만든 배치 엔드포인트
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include", // 세션 쿠키 전송
+                body: JSON.stringify({ hall_ids: hallIds }),
+              }
+            );
+
+            if (likesResponse.ok) {
+              const { like_statuses } = await likesResponse.json(); // ✅ 응답 데이터 구조에 맞게 변경
+              setLikeStatuses(like_statuses);
+            } else {
+              console.error(
+                "Failed to fetch batch like status:",
+                likesResponse.status,
+                likesResponse.statusText
+              );
+              // 에러 발생 시 빈 객체 유지 또는 모든 값을 false로 설정
+              setLikeStatuses({});
+            }
+          } catch (likeErr) {
+            console.error("Error fetching batch like status:", likeErr);
+            setLikeStatuses({}); // 네트워크 오류 등 발생 시
+          } finally {
+            setIsLikesLoading(false); // 좋아요 로딩 완료 (오류 포함)
+          }
+        } else {
+          // 사용자가 로그인하지 않았거나 웨딩홀이 없으면 좋아요 로딩 완료
+          setLikeStatuses({}); // 로그인하지 않은 경우 모두 false
+          setIsLikesLoading(false);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
-        console.error("Error fetching wedding halls:", err);
+        console.error("Error fetching wedding halls or likes:", err);
+        setIsLikesLoading(false); // 좋아요 로딩도 에러와 함께 종료
       } finally {
-        setIsLoading(false); // 로딩 완료 또는 에러 발생 시 로딩 상태 해제
+        setIsLoading(false); // 전체 로딩 완료 (웨딩홀 데이터)
       }
     };
 
-    fetchWeddingHalls();
-  }, []); // 빈 배열: 컴포넌트가 처음 마운트될 때만 실행
+    fetchWeddingHallsAndLikes();
+  }, [user, userLoading]); // user, userLoading이 변경될 때마다 다시 실행 (로그인/로그아웃 시)
 
   // --- 필터링 로직 (useMemo 사용하여 성능 최적화) ---
-  // 백엔드에서 가져온 원본 데이터를 가지고 필터링 및 데이터 재구성을 수행합니다.
   const filteredWeddingHalls = useMemo(() => {
-    // 입력: halls는 백엔드에서 가져온 모든 WeddingCompany 객체들의 리스트입니다.
-    //       각 Company 객체는 halls 속성에 해당 업체의 모든 Hall 객체 리스트를 가집니다.
-    // 출력: 업체명 기준으로 중복이 제거되고 다른 필터가 적용된 Company 객체 리스트.
-    //       각 Company 객체의 'halls' 속성은 해당 업체명의 모든 홀들을 합친 목록입니다.
-
     if (!halls || halls.length === 0) {
-      return []; // 데이터가 없으면 빈 배열 반환
+      return [];
     }
 
     // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. ---
@@ -149,27 +190,21 @@ export default function Halltour() {
 
     // 검색어 필터 (업체명 또는 합쳐진 모든 홀 이름 목록 기준)
     if (appliedSearchTerm.trim() !== "") {
-      // ✅ 검색어에서 띄어쓰기를 제거하고 소문자로 변환합니다.
       const lowerSearchTerm = appliedSearchTerm
         .toLowerCase()
         .replace(/\s+/g, "");
 
       filtered = filtered.filter((company) => {
-        // ✅ 업체명에서 띄어쓰기를 제거하고 소문자로 변환하여 비교합니다.
         const companyNameMatch = company.name
           ?.toLowerCase()
-          .replace(/\s+/g, "") // 띄어쓰기 제거
+          .replace(/\s+/g, "")
           .includes(lowerSearchTerm);
 
-        // ✅ 홀 이름에서 띄어쓰기를 제거하고 소문자로 변환하여 비교합니다.
         const anyHallNameMatch = company.halls?.some((hall: any) =>
-          hall.name
-            ?.toLowerCase()
-            .replace(/\s+/g, "") // 띄어쓰기 제거
-            .includes(lowerSearchTerm)
+          hall.name?.toLowerCase().replace(/\s+/g, "").includes(lowerSearchTerm)
         );
 
-        return companyNameMatch || anyHallNameMatch; // 업체명 또는 어떤 홀 이름이라도 일치 시 포함
+        return companyNameMatch || anyHallNameMatch;
       });
     }
 
@@ -196,14 +231,7 @@ export default function Halltour() {
       });
     }
 
-    // 꽃 장식 필터 (주석 처리된 상태 유지)
-    // if (selectedFlower && selectedFlower !== "전체") {
-    //   filtered = filtered.filter((company) => {
-    //     return company.halls?.some((hall: any) => hall.mood === selectedFlower);
-    //   });
-    // }
-
-    return filtered; // 최종 필터링된 리스트 반환
+    return filtered;
   }, [
     halls,
     appliedSearchTerm,
@@ -224,9 +252,11 @@ export default function Halltour() {
   };
 
   const handleModalClose = () => {
-    // 로그인 모달과 휴대폰 인증 모달 모두 닫기 위함
     setIsLoginModalOpen(false);
   };
+
+  // 전체 로딩 상태 (웨딩홀 데이터 + 좋아요 데이터)
+  const overallLoading = isLoading || isLikesLoading;
 
   return (
     <div className="mt-[80px] w-full ">
@@ -262,7 +292,6 @@ export default function Halltour() {
           ))}
         </div>
       </div>
-      {/* <HallSwiper /> */}
       <button
         onClick={() => setMobileFilterOpen(true)}
         className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
@@ -293,12 +322,10 @@ export default function Halltour() {
         </div>
         {/* 메인 콘텐츠 영역 */}
         <div className="w-[750px] flex flex-wrap items-center justify-start ml-2 gap-5">
-          {/* ✅ 로딩 상태 조건부 렌더링 */}
-          {isLoading ? (
+          {/* ✅ 로딩 상태 조건부 렌더링 (전체 로딩 상태 사용) */}
+          {overallLoading ? (
             <div className="w-full h-64 flex flex-col items-center justify-center gap-4">
-              {/* 로딩 스피너 */}
               <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-              {/* 텍스트 */}
               <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>
             </div>
           ) : error ? (
@@ -320,7 +347,14 @@ export default function Halltour() {
                 filteredWeddingHalls.map(
                   (
                     company // ✅ HallCard에 CompanyWithOneHallOut 객체 전달
-                  ) => <HallCard key={company.id} data={company} />
+                  ) => (
+                    <HallCard
+                      key={company.id}
+                      data={company}
+                      // ✅ props로 좋아요 상태 전달
+                      initialIsLiked={likeStatuses[company.id]}
+                    />
+                  )
                 )}
             </>
           )}

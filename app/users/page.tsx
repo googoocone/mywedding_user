@@ -3,9 +3,10 @@
 import { useState } from "react";
 import MyPage from "@/components/pages/users/MyPage";
 import classNames from "classnames";
-import Likes from "@/components/pages/users/Likes";
+import Likes from "@/components/pages/users/Likes"; // Likes 컴포넌트 임포트
 
-export default function users() {
+export default function UsersPage() {
+  // 컴포넌트명 Users로 변경 (users는 소문자로 시작하는 파일명 관례)
   const [isSelected, setIsSelected] = useState("내정보");
   console.log("isSelected", isSelected);
 
@@ -34,7 +35,8 @@ export default function users() {
         </div>
       </div>
       <div className="w-[700px] h-[1px] bg-gray-200 mx-auto"></div>
-      {isSelected == "내정보" ? <MyPage></MyPage> : <Likes></Likes>}
+
+      {isSelected === "내정보" ? <MyPage /> : <Likes />}
     </div>
   );
 }
