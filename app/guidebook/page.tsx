@@ -41,7 +41,7 @@ const guidebookList = [
 
 export default function GuideBook() {
   return (
-    <div className="w-full sm:w-[1250px] h-screen mx-auto overflow-y-auto">
+    <div className="w-full sm:w-[1250px]  mx-auto overflow-y-auto">
       <div className="w-full mt-10">
         <div className="w-full h-[350px] relative">
           <Image

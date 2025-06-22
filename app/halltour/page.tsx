@@ -360,8 +360,8 @@ export default function Halltour() {
           )}
         </div>
         {/* 우측 viewed */}
-        <div className="hidden md:flex">
-          <div className="w-[250px] sticky top-0 self-start "></div>
+        <div className="hidden  md:flex">
+          <div className="sm:w-[250px] sticky top-0 self-start "></div>
           <div className="flex-1 h-[3000px] "></div>
         </div>
       </div>
