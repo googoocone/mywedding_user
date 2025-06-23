@@ -375,7 +375,7 @@ export default function Halltour() {
         isOpen={isLoginModalOpen}
         onClose={handleModalClose}
         onConfirm={handleLoginModalConfirm}
-        message="3초 만에 로그인하고, 본인 인증을 완료하면 웨딩홀 할인 견적서를 확인할 수 있어요!"
+        message="3초 만에 로그인하고, 본인 인증을 완료하면 2,000여장의 웨딩홀 할인 견적서를 확인할 수 있어요!"
         confirmText="확인"
       />
     </div>
