@@ -50,7 +50,7 @@ export default function Halltour() {
 
   useEffect(() => {
     if (!userLoading) {
-      if (!user || !user.phone) {
+      if (!user) {
         setIsLoginModalOpen(true);
       } else {
         setIsLoginModalOpen(false);
