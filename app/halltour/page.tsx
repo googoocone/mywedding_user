@@ -16,7 +16,6 @@ const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논�
 
 export default function Halltour() {
   let { user, loading: userLoading } = useContext(AuthContext);
-  console.log("Halltour - user:", user); // 디버깅용
 
   const router = useRouter();
 
@@ -51,7 +50,7 @@ export default function Halltour() {
 
   useEffect(() => {
     if (!userLoading) {
-      if (!user) {
+      if (!user || !user.phone) {
         setIsLoginModalOpen(true);
       } else {
         setIsLoginModalOpen(false);
@@ -260,7 +259,13 @@ export default function Halltour() {
 
   const handleLoginModalConfirm = () => {
     setIsLoginModalOpen(false);
-    router.push("/login");
+    if (!user) {
+      router.push("/login");
+    }
+
+    if (user.phone == false) {
+      router.push("/users");
+    }
   };
 
   const handleModalClose = () => {
@@ -370,8 +375,8 @@ export default function Halltour() {
         isOpen={isLoginModalOpen}
         onClose={handleModalClose}
         onConfirm={handleLoginModalConfirm}
-        message="3초 만에 로그인하고 웨딩홀 견적서를 확인해보세요!"
-        confirmText="로그인하러 가기"
+        message="3초 만에 로그인하고, 본인 인증을 완료하면 웨딩홀 할인 견적서를 확인할 수 있어요!"
+        confirmText="확인"
       />
     </div>
   );

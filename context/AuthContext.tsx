@@ -48,9 +48,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // console.error("인증 실패 또는 서버 오류:", res.status, await res.text()); // 디버깅용
       } else {
         const data = await res.json();
-        // 백엔드 응답에서 실제 사용자 객체가 data.user에 있는지, 아니면 data 자체가 사용자인지 확인 필요
-        // 예시: data가 { user: { id: ..., name: ... } } 형태라면 data.user 사용
-        // 예시: data가 { id: ..., name: ... } 형태라면 data 사용
         setUser(data.user || data || null); // 응답 구조에 따라 유연하게 대처, 없으면 null
       }
     } catch (error) {

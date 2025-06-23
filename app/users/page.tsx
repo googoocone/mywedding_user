@@ -35,7 +35,7 @@ export default function UsersPage() {
         </div>
       </div>
       <div className="w-[700px] h-[1px] bg-gray-200 mx-auto"></div>
-
+      {/* isSelected 값에 따라 MyPage 또는 Likes 컴포넌트 렌더링 */}
       {isSelected === "내정보" ? <MyPage /> : <Likes />}
     </div>
   );
