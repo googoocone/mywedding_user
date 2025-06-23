@@ -335,7 +335,7 @@ export default function HallDetailPage() {
     }
 
     const preferredStartMinutes = 11 * 60; // 11:00 => 660분
-    const preferredEndMinutes = 14 * 60; // 14:00 => 840분
+    const preferredEndMinutes = 14.5 * 60; // 14:30 => 870분
 
     const parseTimeToMinutes = (timeStr) => {
       const parts = timeStr.split(":");
@@ -367,11 +367,11 @@ export default function HallDetailPage() {
           slotMinutes >= preferredStartMinutes &&
           slotMinutes <= preferredEndMinutes
         ) {
-          return "메인타임(14:00 이내)";
+          return "메인타임(14:30 이내)";
         }
       }
     }
-    return "서브타임(14:00 이후)";
+    return "서브타임(14:30 이후)";
   };
 
   // --- 로딩 / 에러 / 데이터 없음 처리 ---
