@@ -42,31 +42,47 @@ export default function Halltour() {
   const [halls, setHalls] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // ✅ 추가: 좋아요 상태를 저장할 상태 (key: wedding_company_id, value: boolean)
   const [likeStatuses, setLikeStatuses] = useState<{ [key: number]: boolean }>(
     {}
   );
-  // ✅ 추가: 좋아요 상태 로딩 상태
   const [isLikesLoading, setIsLikesLoading] = useState(false);
 
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // 로그인 모달 상태만 유지
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // 페이지 진입 시 로그인 상태 확인 및 비로그인 시 로그인 유도 모달
   useEffect(() => {
     if (!userLoading) {
-      // 사용자 로딩이 완료된 후에만 실행
       if (!user) {
         setIsLoginModalOpen(true);
       } else {
-        setIsLoginModalOpen(false); // 로그인 되어 있으면 모달 닫기
+        setIsLoginModalOpen(false);
       }
     }
   }, [user, userLoading]);
 
+  // 배열을 무작위로 섞는 유틸리티 함수
+  const shuffleArray = (array: any[]) => {
+    let currentIndex = array.length,
+      randomIndex;
+
+    // 남아있는 요소가 없을 때까지 반복
+    while (currentIndex !== 0) {
+      // 남아있는 요소 중 하나를 무작위로 선택
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // 현재 요소와 무작위로 선택된 요소를 교환
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex],
+        array[currentIndex],
+      ];
+    }
+    return array;
+  };
+
   useEffect(() => {
     const fetchWeddingHallsAndLikes = async () => {
       setIsLoading(true);
-      setIsLikesLoading(true); // 좋아요 상태 로딩 시작
+      setIsLikesLoading(true);
 
       try {
         // 1. 웨딩홀 목록 가져오기
@@ -88,28 +104,33 @@ export default function Halltour() {
           );
         }
 
-        const hallData: any[] = await hallsResponse.json();
-        console.log("Fetched halls data:", hallData);
-        setHalls(hallData); // 원본 데이터 그대로 상태에 저장
+        let hallData: any[] = await hallsResponse.json();
+        console.log("Fetched halls data (before shuffle):", hallData);
 
-        // 2. 웨딩홀 ID 목록 추출
+        // ✅ 획득한 웨딩홀 데이터를 무작위로 섞습니다.
+        hallData = shuffleArray(hallData); // 배열을 섞어서 다시 할당
+
+        console.log("Fetched halls data (after shuffle):", hallData);
+        setHalls(hallData); // 섞은 데이터로 상태 업데이트
+
+        // 2. 웨딩홀 ID 목록 추출 (섞인 순서의 ID 사용)
         const hallIds = hallData.map((hall: any) => hall.id);
 
         // 3. 사용자가 로그인했다면, 좋아요 상태 일괄 가져오기
         if (user && hallIds.length > 0) {
           try {
             const likesResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/likes/status/batch`, // ✅ 새로 만든 배치 엔드포인트
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/likes/status/batch`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include", // 세션 쿠키 전송
+                credentials: "include",
                 body: JSON.stringify({ hall_ids: hallIds }),
               }
             );
 
             if (likesResponse.ok) {
-              const { like_statuses } = await likesResponse.json(); // ✅ 응답 데이터 구조에 맞게 변경
+              const { like_statuses } = await likesResponse.json();
               setLikeStatuses(like_statuses);
             } else {
               console.error(
@@ -117,39 +138,37 @@ export default function Halltour() {
                 likesResponse.status,
                 likesResponse.statusText
               );
-              // 에러 발생 시 빈 객체 유지 또는 모든 값을 false로 설정
               setLikeStatuses({});
             }
           } catch (likeErr) {
             console.error("Error fetching batch like status:", likeErr);
-            setLikeStatuses({}); // 네트워크 오류 등 발생 시
+            setLikeStatuses({});
           } finally {
-            setIsLikesLoading(false); // 좋아요 로딩 완료 (오류 포함)
+            setIsLikesLoading(false);
           }
         } else {
-          // 사용자가 로그인하지 않았거나 웨딩홀이 없으면 좋아요 로딩 완료
-          setLikeStatuses({}); // 로그인하지 않은 경우 모두 false
+          setLikeStatuses({});
           setIsLikesLoading(false);
         }
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
         console.error("Error fetching wedding halls or likes:", err);
-        setIsLikesLoading(false); // 좋아요 로딩도 에러와 함께 종료
+        setIsLikesLoading(false);
       } finally {
-        setIsLoading(false); // 전체 로딩 완료 (웨딩홀 데이터)
+        setIsLoading(false);
       }
     };
 
     fetchWeddingHallsAndLikes();
-  }, [user, userLoading]); // user, userLoading이 변경될 때마다 다시 실행 (로그인/로그아웃 시)
+  }, [user, userLoading]);
 
   // --- 필터링 로직 (useMemo 사용하여 성능 최적화) ---
   const filteredWeddingHalls = useMemo(() => {
+    // ... (이전과 동일한 필터링 로직) ...
     if (!halls || halls.length === 0) {
       return [];
     }
 
-    // --- 1. 업체명 기준으로 그룹화하고, 각 업체명의 모든 홀들을 모읍니다. ---
     const consolidatedCompanyData: Map<
       string,
       { companyInfo: any; allHalls: any[] }
@@ -170,7 +189,6 @@ export default function Halltour() {
       }
     }
 
-    // --- 2. 그룹화된 데이터를 필터링된 리스트로 변환합니다. ---
     let filtered: any[] = [];
     for (const data of consolidatedCompanyData.values()) {
       const representativeCompany = data.companyInfo;
@@ -186,9 +204,6 @@ export default function Halltour() {
       }
     }
 
-    // --- 3. 기존 필터 적용 (업체명 중복이 제거되고 홀 목록이 합쳐진 리스트에 대해) ---
-
-    // 검색어 필터 (업체명 또는 합쳐진 모든 홀 이름 목록 기준)
     if (appliedSearchTerm.trim() !== "") {
       const lowerSearchTerm = appliedSearchTerm
         .toLowerCase()
@@ -208,7 +223,6 @@ export default function Halltour() {
       });
     }
 
-    // 지역 필터 (업체 주소 기준)
     if (selectedRegion && selectedRegion !== "전체") {
       filtered = filtered.filter((company) => {
         const address = company.address || "";
@@ -222,7 +236,6 @@ export default function Halltour() {
       });
     }
 
-    // 웨딩 타입 필터 (합쳐진 홀 목록 중 어떤 홀이라도 해당 타입에 일치하는 경우)
     if (selectedWeddingType && selectedWeddingType !== "전체") {
       filtered = filtered.filter((company) => {
         return company.halls?.some(
@@ -239,13 +252,12 @@ export default function Halltour() {
     selectedSubRegion,
     selectedWeddingType,
     selectedFlower,
-  ]); // useMemo 의존성 배열
+  ]);
 
   const handleSearch = () => {
     setAppliedSearchTerm(searchTerm);
   };
 
-  // 로그인 유도 모달 확인/취소 핸들러
   const handleLoginModalConfirm = () => {
     setIsLoginModalOpen(false);
     router.push("/login");
@@ -255,7 +267,6 @@ export default function Halltour() {
     setIsLoginModalOpen(false);
   };
 
-  // 전체 로딩 상태 (웨딩홀 데이터 + 좋아요 데이터)
   const overallLoading = isLoading || isLikesLoading;
 
   return (
@@ -322,55 +333,45 @@ export default function Halltour() {
         </div>
         {/* 메인 콘텐츠 영역 */}
         <div className="w-[750px] flex flex-wrap items-center justify-start ml-2 gap-5">
-          {/* ✅ 로딩 상태 조건부 렌더링 (전체 로딩 상태 사용) */}
           {overallLoading ? (
             <div className="w-full h-64 flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
               <p className="text-lg text-gray-600">잠시만 기다려주세요...</p>
             </div>
           ) : error ? (
-            // 에러 상태
             <div className="w-full h-64 flex items-center justify-center">
               <p className="text-red-500 text-xl">오류 발생: {error}</p>
             </div>
           ) : (
-            // 데이터 로딩 완료 후 (오류 없을 때)
             <>
-              {/* 데이터가 없을 때 */}
               {filteredWeddingHalls.length === 0 && (
                 <div className="w-full h-64 flex items-center justify-center">
                   <p>조건에 맞는 웨딩홀이 없습니다.</p>
                 </div>
               )}
-              {/* 필터링된 데이터 목록 표시 */}
               {filteredWeddingHalls.length > 0 &&
-                filteredWeddingHalls.map(
-                  (
-                    company // ✅ HallCard에 CompanyWithOneHallOut 객체 전달
-                  ) => (
-                    <HallCard
-                      key={company.id}
-                      data={company}
-                      // ✅ props로 좋아요 상태 전달
-                      initialIsLiked={likeStatuses[company.id]}
-                    />
-                  )
-                )}
+                filteredWeddingHalls.map((company) => (
+                  <HallCard
+                    key={company.id}
+                    data={company}
+                    initialIsLiked={likeStatuses[company.id]}
+                  />
+                ))}
             </>
           )}
         </div>
         {/* 우측 viewed */}
-        <div className="hidden  md:flex">
+        <div className="hidden md:flex">
           <div className="sm:w-[250px] sticky top-0 self-start "></div>
           <div className="flex-1 h-[3000px] "></div>
         </div>
       </div>
-      <AlertDialog // 로그인 유도 모달
+      <AlertDialog
         isOpen={isLoginModalOpen}
         onClose={handleModalClose}
         onConfirm={handleLoginModalConfirm}
         message="3초 만에 로그인하고 웨딩홀 견적서를 확인해보세요!"
-        confirmText="로그인하러 가기" // 버튼 텍스트 수정
+        confirmText="로그인하러 가기"
       />
     </div>
   );
