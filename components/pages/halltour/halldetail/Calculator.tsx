@@ -323,11 +323,11 @@ export default function Calculator({
         optionalEstimateOptions.length > 0) && (
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2 text-gray-700">옵션</h3>
-          {/* ✨ [수정됨] 필수 옵션도 체크박스 표시 및 토글 가능 */}
+
           {requiredEstimateOptions.length > 0 && (
             <div className="mb-3">
               <h4 className="text-md font-medium mb-1 text-gray-600">
-                기본 포함 옵션 (선택 가능) {/* 사용자 인지를 위한 문구 변경 */}
+                기본 포함 옵션
               </h4>
               {requiredEstimateOptions.map((option) => {
                 const compareOption = compareEstimate?.estimate_options.find(
