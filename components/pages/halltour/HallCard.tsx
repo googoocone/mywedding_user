@@ -208,13 +208,13 @@ export default function HallCard({
         </button>
       </div>
 
-      <AlertDialog // 휴대폰 인증 필요 모달
+      {/* <AlertDialog // 휴대폰 인증 필요 모달
         isOpen={isPhoneAuthModalOpen}
         onClose={handlePhoneAuthModalClose}
         onConfirm={handlePhoneAuthModalConfirm}
         message="휴대폰 번호 인증을 하시면 상세 견적서를 확인하실 수 있어요!"
         confirmText="인증하러 가기"
-      />
+      /> */}
     </div>
   );
 }
