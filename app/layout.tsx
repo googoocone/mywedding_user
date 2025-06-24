@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script"; // next/script에서 Script를 import 합니다.
+import { Analytics } from "@vercel/analytics/next";
 
 import Navigation from "@/components/Navigation";
 import "./globals.css";
@@ -40,6 +41,7 @@ export default function RootLayout({
           {children}
           <Footer></Footer>
         </AuthProvider>
+        <Analytics></Analytics>
       </body>
     </html>
   );
