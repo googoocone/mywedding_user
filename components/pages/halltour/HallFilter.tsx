@@ -117,7 +117,7 @@ export default function HallFilter() {
           {Object.keys(regions).map((region) => (
             <label
               key={region}
-              className="flex items-center space-x-2 cursor-pointer"
+              className="flex text-sm items-center space-x-2 cursor-pointer"
             >
               <input
                 type="radio"
@@ -128,13 +128,13 @@ export default function HallFilter() {
                   setSelectedRegion(region);
                   setSelectedSubRegion("");
                 }}
-                className="appearance-none w-5 h-5 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
+                className="appearance-none w-4 h-4 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
               />
               <span>{region}</span>
             </label>
           ))}
         </div>
-        <hr className="mt-4" />
+        <div className="mt-4 w-full h-[1px] bg-gray-300"></div>
       </div>
 
       {/* 상세 지역 선택 */}
@@ -145,7 +145,7 @@ export default function HallFilter() {
             (subRegion) => (
               <label
                 key={subRegion}
-                className="flex items-center space-x-2 my-2 cursor-pointer p-1 rounded-md hover:bg-orange-100 transition"
+                className="flex items-center text-sm space-x-2 my-2 cursor-pointer p-1 rounded-md hover:bg-orange-100 transition"
               >
                 <input
                   type="radio"
@@ -153,14 +153,14 @@ export default function HallFilter() {
                   value={subRegion}
                   checked={selectedSubRegion === subRegion}
                   onChange={() => setSelectedSubRegion(subRegion)}
-                  className="appearance-none w-5 h-5 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
+                  className="appearance-none w-4 h-4 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
                 />
                 <span>{subRegion}</span>
               </label>
             )
           )}
         </div>
-        <hr className="mt-4" />
+        <div className="mt-4 w-full h-[1px] bg-gray-300"></div>
       </div>
 
       {/* 예식 타입 선택 */}
@@ -170,7 +170,7 @@ export default function HallFilter() {
           {weddingTypes.map((type) => (
             <label
               key={type}
-              className="flex items-center space-x-2 cursor-pointer"
+              className="flex text-sm items-center space-x-2 cursor-pointer"
             >
               <input
                 type="radio"
@@ -178,13 +178,13 @@ export default function HallFilter() {
                 value={type}
                 checked={selectedWeddingType === type}
                 onChange={() => setSelectedWeddingType(type)}
-                className="appearance-none w-5 h-5 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
+                className="appearance-none w-4 h-4 rounded-full bg-white border border-gray-200 checked:bg-[#FF767B] checked:border-none outline-none focus:ring-0"
               />
               <span>{type}</span>
             </label>
           ))}
         </div>
-        <hr className="mt-4" />
+        <div className="mt-4 w-full h-[1px] bg-gray-300"></div>
       </div>
 
       {/* 생화장식 선택 */}

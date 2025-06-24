@@ -2,7 +2,7 @@
 
 import HallCard from "@/components/pages/halltour/HallCard";
 import HallFilter from "@/components/pages/halltour/HallFilter";
-import { useState, useEffect, useMemo, useContext } from "react";
+import { useState, useEffect, useMemo, useContext, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "@/context/AuthContext";
 import { AiOutlineSearch } from "react-icons/ai";
@@ -11,15 +11,21 @@ import { useWeddingFilterStore } from "@/store/useWeddingFilterStore";
 
 import MobileHallFilter from "@/components/pages/halltour/MobileHallFilter";
 import AlertDialog from "@/components/common/AlertDialog";
+import Link from "next/link";
 
-const hotKeywords = ["르비르모어", "아모르하우스", "더채플엣논현", "w웨딩"];
+const hotKeywords = [
+  { name: "르비르모어", url: "/halltour/르비르모어" },
+  { name: "아모르하우스", url: "/halltour/아모르하우스" },
+  { name: "더채플엣논현", url: "/halltour/더채플엣논현" },
+  { name: "라온제나", url: "/halltour/라온제나" },
+];
+const ITEMS_PER_PAGE = 30; // 한 번에 보여줄 아이템 수
 
 export default function Halltour() {
   let { user, loading: userLoading } = useContext(AuthContext);
 
   const router = useRouter();
 
-  // Zustand 스토어에서 필터 상태 가져오기
   const selectedRegion = useWeddingFilterStore((state) => state.selectedRegion);
   const selectedSubRegion = useWeddingFilterStore(
     (state) => state.selectedSubRegion
@@ -38,38 +44,28 @@ export default function Halltour() {
   );
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [halls, setHalls] = useState<any[]>([]);
+  const [allHalls, setAllHalls] = useState<any[]>([]); // ✅ 모든 웨딩홀 데이터를 저장할 상태
+  const [displayedHalls, setDisplayedHalls] = useState<any[]>([]); // ✅ 현재 화면에 보여질 웨딩홀 데이터
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [likeStatuses, setLikeStatuses] = useState<{ [key: number]: boolean }>(
     {}
   );
   const [isLikesLoading, setIsLikesLoading] = useState(false);
-
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (!userLoading) {
-      if (!user) {
-        setIsLoginModalOpen(true);
-      } else {
-        setIsLoginModalOpen(false);
-      }
-    }
-  }, [user, userLoading]);
+  // --- 페이지네이션 관련 상태 추가 ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true); // 더 불러올 데이터가 있는지 여부 (클라이언트 측)
 
   // 배열을 무작위로 섞는 유틸리티 함수
   const shuffleArray = (array: any[]) => {
     let currentIndex = array.length,
       randomIndex;
 
-    // 남아있는 요소가 없을 때까지 반복
     while (currentIndex !== 0) {
-      // 남아있는 요소 중 하나를 무작위로 선택
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex--;
-
-      // 현재 요소와 무작위로 선택된 요소를 교환
       [array[currentIndex], array[randomIndex]] = [
         array[randomIndex],
         array[currentIndex],
@@ -78,13 +74,13 @@ export default function Halltour() {
     return array;
   };
 
+  // ✅ 모든 웨딩홀 데이터와 좋아요 상태를 한 번에 불러오는 초기 로딩 로직
   useEffect(() => {
-    const fetchWeddingHallsAndLikes = async () => {
+    const fetchAllWeddingHallsAndLikes = async () => {
       setIsLoading(true);
-      setIsLikesLoading(true);
+      setError(null); // 에러 초기화
 
       try {
-        // 1. 웨딩홀 목록 가져오기
         const hallsResponse = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/hall/get_wedding_halls`,
           {
@@ -104,19 +100,18 @@ export default function Halltour() {
         }
 
         let hallData: any[] = await hallsResponse.json();
-        console.log("Fetched halls data (before shuffle):", hallData);
+        console.log("Fetched all halls data:", hallData);
 
         // ✅ 획득한 웨딩홀 데이터를 무작위로 섞습니다.
-        hallData = shuffleArray(hallData); // 배열을 섞어서 다시 할당
+        hallData = shuffleArray(hallData);
+        setAllHalls(hallData); // 모든 데이터 저장
 
-        console.log("Fetched halls data (after shuffle):", hallData);
-        setHalls(hallData); // 섞은 데이터로 상태 업데이트
-
-        // 2. 웨딩홀 ID 목록 추출 (섞인 순서의 ID 사용)
+        // 2. 웨딩홀 ID 목록 추출
         const hallIds = hallData.map((hall: any) => hall.id);
 
         // 3. 사용자가 로그인했다면, 좋아요 상태 일괄 가져오기
         if (user && hallIds.length > 0) {
+          setIsLikesLoading(true);
           try {
             const likesResponse = await fetch(
               `${process.env.NEXT_PUBLIC_BACKEND_URL}/likes/status/batch`,
@@ -137,34 +132,30 @@ export default function Halltour() {
                 likesResponse.status,
                 likesResponse.statusText
               );
-              setLikeStatuses({});
             }
           } catch (likeErr) {
             console.error("Error fetching batch like status:", likeErr);
-            setLikeStatuses({});
           } finally {
             setIsLikesLoading(false);
           }
         } else {
-          setLikeStatuses({});
+          setLikeStatuses({}); // 로그인하지 않았거나 데이터 없으면 좋아요 상태 초기화
           setIsLikesLoading(false);
         }
       } catch (err: any) {
         setError(err.message || "Failed to fetch wedding halls.");
-        console.error("Error fetching wedding halls or likes:", err);
-        setIsLikesLoading(false);
+        console.error("Error fetching all wedding halls or likes:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchWeddingHallsAndLikes();
-  }, [user, userLoading]);
+    fetchAllWeddingHallsAndLikes();
+  }, [user, userLoading]); // 컴포넌트 마운트 시 한 번만 또는 user/userLoading 변경 시 실행
 
   // --- 필터링 로직 (useMemo 사용하여 성능 최적화) ---
   const filteredWeddingHalls = useMemo(() => {
-    // ... (이전과 동일한 필터링 로직) ...
-    if (!halls || halls.length === 0) {
+    if (!allHalls || allHalls.length === 0) {
       return [];
     }
 
@@ -173,7 +164,9 @@ export default function Halltour() {
       { companyInfo: any; allHalls: any[] }
     > = new Map();
 
-    for (const company of halls) {
+    // 회사별로 홀들을 통합
+    for (const company of allHalls) {
+      // ✅ allHalls에서 필터링 시작
       if (company.name) {
         if (!consolidatedCompanyData.has(company.name)) {
           consolidatedCompanyData.set(company.name, {
@@ -203,6 +196,7 @@ export default function Halltour() {
       }
     }
 
+    // 검색어 필터링
     if (appliedSearchTerm.trim() !== "") {
       const lowerSearchTerm = appliedSearchTerm
         .toLowerCase()
@@ -222,6 +216,7 @@ export default function Halltour() {
       });
     }
 
+    // 지역 필터링
     if (selectedRegion && selectedRegion !== "전체") {
       filtered = filtered.filter((company) => {
         const address = company.address || "";
@@ -235,6 +230,7 @@ export default function Halltour() {
       });
     }
 
+    // 웨딩 타입 필터링
     if (selectedWeddingType && selectedWeddingType !== "전체") {
       filtered = filtered.filter((company) => {
         return company.halls?.some(
@@ -242,10 +238,12 @@ export default function Halltour() {
         );
       });
     }
+    // selectedFlower 필터링은 현재 로직에 없으므로, 필요하다면 추가
+    // if (selectedFlower && selectedFlower !== "전체") { /* ... */ }
 
     return filtered;
   }, [
-    halls,
+    allHalls, // ✅ allHalls가 변경될 때마다 재계산
     appliedSearchTerm,
     selectedRegion,
     selectedSubRegion,
@@ -253,8 +251,30 @@ export default function Halltour() {
     selectedFlower,
   ]);
 
+  // ✅ 필터링된 데이터가 변경되거나 페이지가 변경될 때 displayedHalls 업데이트
+  useEffect(() => {
+    // 필터링 결과가 변경되면 페이지를 1로 리셋하고 새롭게 보여줄 데이터 설정
+    setCurrentPage(1);
+    setDisplayedHalls(filteredWeddingHalls.slice(0, ITEMS_PER_PAGE));
+    setHasMore(filteredWeddingHalls.length > ITEMS_PER_PAGE);
+  }, [filteredWeddingHalls]); // filteredWeddingHalls가 변경될 때마다 실행
+
   const handleSearch = () => {
     setAppliedSearchTerm(searchTerm);
+  };
+
+  // ✅ "더 보기" 버튼 클릭 핸들러
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const nextHalls = filteredWeddingHalls.slice(startIndex, endIndex);
+
+    setDisplayedHalls((prevHalls) => [...prevHalls, ...nextHalls]);
+    setCurrentPage(nextPage);
+
+    // 더 이상 보여줄 데이터가 없으면 hasMore를 false로 설정
+    setHasMore(endIndex < filteredWeddingHalls.length);
   };
 
   const handleLoginModalConfirm = () => {
@@ -262,22 +282,24 @@ export default function Halltour() {
     if (!user) {
       router.push("/login");
     }
-
-    // if (user.phone == false) {
-    //   router.push("/users");
-    // }
   };
 
   const handleModalClose = () => {
     setIsLoginModalOpen(false);
   };
 
-  const overallLoading = isLoading || isLikesLoading;
+  const overallLoading = isLoading; // 초기 로딩 상태
 
   return (
-    <div className="mt-[80px] w-full ">
+    <div className=" w-full ">
+      <button
+        onClick={() => setMobileFilterOpen(true)}
+        className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
+      >
+        <GiSettingsKnobs /> 필터
+      </button>
       {/* 검색창 부분 */}
-      <div className="w-full sm:w-[1400px] max-w-full h-[90px] px-4 mb-5 sm:px-[80px] mx-auto flex flex-col items-center justify-center bg-white">
+      <div className="w-full h-[180px] sm:w-[1400px] max-w-full px-4 sm:px-[80px] mx-auto flex flex-col items-center justify-center bg-white">
         <div className="w-full sm:w-[500px] h-[50px] border border-gray-300 rounded-full flex items-center">
           <input
             value={searchTerm}
@@ -285,8 +307,8 @@ export default function Halltour() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSearch();
             }}
-            className="flex-1 h-full rounded-full focus:outline-none pl-4"
-            placeholder="웨딩홀을 입력해주세요"
+            className="flex-1 h-full rounded-full focus:outline-none pl-4 text-sm"
+            placeholder="검색을 시작해 보세요"
             type="text"
           />
           <AiOutlineSearch
@@ -299,21 +321,18 @@ export default function Halltour() {
             인기 검색어
           </div>
           {hotKeywords.map((item, index) => (
-            <div
-              key={index}
-              className="text-[10px] xs:text-[12px] sm:text-[14px] text-gray-500 px-1"
-            >
-              {item}
-            </div>
+            <Link href={item.url}>
+              <div
+                key={index}
+                className="text-[10px] xs:text-[12px] sm:text-[14px] text-gray-500 hover:text-gray-700 px-1"
+              >
+                {item.name}
+              </div>
+            </Link>
           ))}
         </div>
       </div>
-      <button
-        onClick={() => setMobileFilterOpen(true)}
-        className="sm:hidden fixed bottom-0 left-0 w-full z-40 px-4 py-3 bg-white border-y border-gray-200 flex items-center justify-center gap-2"
-      >
-        <GiSettingsKnobs /> 필터
-      </button>
+
       {/* 모바일 필터 모달 */}
       {mobileFilterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -329,7 +348,7 @@ export default function Halltour() {
         </div>
       )}
       {/* 컨텐츠 부분 */}
-      <div className="w-[1400px] mt-8 max-w-full flex items-start justify-center mx-auto ">
+      <div className="w-[1400px]  max-w-full flex items-start justify-center mx-auto ">
         {/* 좌측 필터 영역 */}
         <div className="w-[270px] max-h-[calc(100vh-120px)] scrollbar-hidden overflow-y-auto hidden sm:block sticky top-[100px] self-start">
           <div>
@@ -337,7 +356,7 @@ export default function Halltour() {
           </div>
         </div>
         {/* 메인 콘텐츠 영역 */}
-        <div className="w-[750px] flex flex-wrap items-center justify-start ml-2 gap-5">
+        <div className="w-[850px] flex flex-wrap items-center justify-start ml-2 gap-5">
           {overallLoading ? (
             <div className="w-full h-64 flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
@@ -349,19 +368,33 @@ export default function Halltour() {
             </div>
           ) : (
             <>
-              {filteredWeddingHalls.length === 0 && (
+              {displayedHalls.length === 0 && ( // 보여줄 데이터가 없을 때
                 <div className="w-full h-64 flex items-center justify-center">
                   <p>조건에 맞는 웨딩홀이 없습니다.</p>
                 </div>
               )}
-              {filteredWeddingHalls.length > 0 &&
-                filteredWeddingHalls.map((company) => (
-                  <HallCard
-                    key={company.id}
-                    data={company}
-                    initialIsLiked={likeStatuses[company.id]}
-                  />
-                ))}
+              {displayedHalls.length > 0 &&
+                displayedHalls.map(
+                  (
+                    company // ✅ displayedHalls 사용
+                  ) => (
+                    <HallCard
+                      key={company.id}
+                      data={company}
+                      initialIsLiked={likeStatuses[company.id]}
+                    />
+                  )
+                )}
+              {hasMore && ( // 더 불러올 데이터가 있을 때만 "더 보기" 버튼 표시
+                <div className="w-full flex justify-center mt-4">
+                  <button
+                    onClick={handleLoadMore}
+                    className="px-6 py-3 bg-[#ff767b]/80 text-white rounded-full hover:bg-[#ff767b] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    더 보기
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

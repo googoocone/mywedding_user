@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 const navList = [
   { name: "홈", url: "/" },
   { name: "마웨다 스토리", url: "/story" },
-  { name: "웨딩홀 투어", url: "/halltour" },
+  // { name: "웨딩홀 투어", url: "/halltour" },
   // { name: "웨딩 로드맵", url: "/roadmap" },
   { name: "웨딩 가이드북", url: "/guidebook" },
 ];
