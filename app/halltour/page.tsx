@@ -16,8 +16,8 @@ import Link from "next/link";
 const hotKeywords = [
   { name: "르비르모어", url: "/halltour/르비르모어" },
   { name: "아모르하우스", url: "/halltour/아모르하우스" },
-  { name: "더채플엣논현", url: "/halltour/더채플엣논현" },
-  { name: "라온제나", url: "/halltour/라온제나" },
+  { name: "더채플엣논현", url: "/halltour/더채플앳논현" },
+  { name: "라온제나", url: "/halltour/라온제나%20강남" },
 ];
 const ITEMS_PER_PAGE = 30; // 한 번에 보여줄 아이템 수
 
