@@ -32,9 +32,13 @@ export default function HallCard({
   }, [initialIsLiked]);
 
   const handleClick = () => {
-    const companyName = data.name;
-    const targetUrl = `/halltour/${companyName}`;
-    router.push(targetUrl);
+    if (!user) {
+      setIsPhoneAuthModalOpen(true);
+    } else {
+      const companyName = data.name;
+      const targetUrl = `/halltour/${companyName}`;
+      router.push(targetUrl);
+    }
   };
 
   const handleLikeToggle = async (e: React.MouseEvent) => {
@@ -231,12 +235,12 @@ export default function HallCard({
         )}
       </div>
 
-      <div className="flex gap-2 items-center justify-start text-sm mt-1 ">
+      <div className="flex gap-2 items-center justify-start text-sm mt-3 ">
         <button
           onClick={handleViewEstimate}
           className="flex items-center group"
         >
-          <span className="underline group-hover:no-underline transition-all duration-200 cursor-pointer">
+          <span className="underline group-hover:no-underline transition-all duration-200 cursor-pointer ">
             할인견적서 보기
           </span>
           <Image
@@ -254,7 +258,7 @@ export default function HallCard({
         onClose={handlePhoneAuthModalClose}
         onConfirm={handlePhoneAuthModalConfirm}
         message="3초만에 로그인하고, 할인 견적서 2천개를 확인하세요"
-        confirmText="인증하러 가기"
+        confirmText="로그인하러 가기"
       />
     </div>
   );
