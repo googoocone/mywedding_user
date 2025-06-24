@@ -593,6 +593,7 @@ export default function HallDetailPage() {
               isCalculatorModalOpen ? "text-[#ff767b]" : "text-gray-500"
             }`}
           />
+          견적서 계산기
         </button>
       </div>
       {/* --- 모바일 필터 모달 (하단 시트 형태) --- */}
