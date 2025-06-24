@@ -236,10 +236,7 @@ export default function HallCard({
       </div>
 
       <div className="flex gap-2 items-center justify-start text-sm mt-3 ">
-        <button
-          onClick={handleViewEstimate}
-          className="flex items-center group"
-        >
+        <button className="flex items-center group">
           <span className="underline group-hover:no-underline transition-all duration-200 cursor-pointer ">
             할인견적서 보기
           </span>
