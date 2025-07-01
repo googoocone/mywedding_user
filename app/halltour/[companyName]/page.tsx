@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo, useContext } from "react";
+import { useParams, useRouter } from "next/navigation"; // ⭐️ useRouter 추가
 import PhotoSection from "@/components/pages/halltour/halldetail/PhotoSection";
 import ImageModal from "@/components/pages/halltour/halldetail/ImageModal";
 import Calculator from "@/components/pages/halltour/halldetail/Calculator";
@@ -14,9 +13,10 @@ import HallInfoSection from "@/components/pages/halltour/halldetail/HallInfoSect
 import EtcSection from "@/components/pages/halltour/halldetail/EtcSection";
 import { CiCalculator1, CiFilter } from "react-icons/ci";
 import { IoClose } from "react-icons/io5";
-import { StaticImageData } from "next/image"; // StaticImageData 타입 추가
+import { StaticImageData } from "next/image";
+import { AuthContext } from "@/context/AuthContext";
 
-// --- 타입 정의 ---
+// --- 타입 정의 (기존과 동일) ---
 interface MealPrice {
   id: number;
   estimate_id: number;
@@ -76,13 +76,15 @@ interface HallCompany {
 }
 
 export default function HallDetailPage() {
+  const { user, loading: userLoading }: any = useContext(AuthContext);
+  const router = useRouter(); // ⭐️ useRouter 인스턴스 생성
   const params = useParams();
   const companyNameParam = params.companyName;
   const companyName = Array.isArray(companyNameParam)
     ? companyNameParam[0]
     : companyNameParam;
 
-  // --- 상태 변수 ---
+  // --- 상태 변수 (기존과 동일) ---
   const [hallNameFilter, setHallNameFilter] = useState<string>("");
   const [estimateTypeFilter, setEstimateTypeFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -94,7 +96,7 @@ export default function HallDetailPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
-  // --- 데이터 로딩 ---
+  // --- 데이터 로딩 (기존과 동일) ---
   useEffect(() => {
     if (!companyName) {
       setError("업체 이름을 찾을 수 없습니다.");
@@ -153,31 +155,23 @@ export default function HallDetailPage() {
     fetchDetailWeddingHall();
   }, [companyName]);
 
-  // --- ⭐️ 파생 상태 및 필터 로직 (대대적 수정) ---
-
+  // --- 파생 상태 및 필터 로직 (기존과 동일) ---
   const allHalls: Hall[] = hallCompany?.halls || [];
   const hallNames = useMemo(
     () => Array.from(new Set(allHalls.map((h) => h.name))),
     [allHalls]
   );
-
-  // 현재 선택된 홀 정보
   const currentHall = useMemo(
     () => allHalls.find((h) => h.name === hallNameFilter),
     [allHalls, hallNameFilter]
   );
-
-  // 현재 홀에서 선택 가능한 '견적서 종류' 목록 ('standard', 'admin')
   const estimateTypesForDateButtons = useMemo(() => {
     if (!currentHall) return [];
     const types = new Set(currentHall.estimates.map((e) => e.type));
-    return Array.from(types).sort((a, b) => (a === "standard" ? -1 : 1)); // standard가 항상 앞으로
+    return Array.from(types).sort((a, b) => (a === "standard" ? -1 : 1));
   }, [currentHall]);
-
-  // ⭐️ [핵심] 선택된 '견적서 종류'에 따라 필터링된 '날짜' 목록
   const filteredDates = useMemo(() => {
     if (!currentHall || !estimateTypeFilter) return [];
-
     const dates = new Set(
       currentHall.estimates
         .filter((e) => e.type === estimateTypeFilter)
@@ -187,8 +181,6 @@ export default function HallDetailPage() {
       (a, b) => new Date(a).getTime() - new Date(b).getTime()
     );
   }, [currentHall, estimateTypeFilter]);
-
-  // 현재 선택된 필터에 따라 화면에 표시될 최종 견적서 정보
   const { standardEstimate, adminEstimate, displayEstimate } = useMemo(() => {
     if (!currentHall) {
       return {
@@ -197,19 +189,15 @@ export default function HallDetailPage() {
         displayEstimate: null,
       };
     }
-
     const stdEst: Estimate | null =
       currentHall.estimates.find((e) => e.type === "standard") || null;
-
     const admEst: Estimate | null = dateFilter
       ? currentHall.estimates.find(
           (e) => e.date === dateFilter && e.type === "admin"
         ) || null
       : null;
-
     const dispEst: Estimate | null =
       estimateTypeFilter === "admin" && admEst ? admEst : stdEst;
-
     return {
       standardEstimate: stdEst,
       adminEstimate: admEst,
@@ -217,29 +205,21 @@ export default function HallDetailPage() {
     };
   }, [currentHall, dateFilter, estimateTypeFilter]);
 
-  // --- ⭐️ 필터 기본값 설정 로직 (useEffect 리팩토링) ---
-
-  // 1. 로딩 완료 후 또는 홀 목록이 변경되면 첫번째 홀을 기본으로 선택
+  // --- 필터 기본값 설정 로직 (기존과 동일) ---
   useEffect(() => {
     if (!isLoading && !hallNameFilter && hallNames.length > 0) {
       setHallNameFilter(hallNames[0]);
     }
   }, [isLoading, hallNames, hallNameFilter]);
-
-  // 2. 홀이 바뀌면, 견적서 종류 필터를 재설정하고, 이에 따라 날짜 필터도 초기화
   useEffect(() => {
     if (currentHall) {
-      const defaultType = estimateTypesForDateButtons.includes("admin")
-        ? "admin"
-        : "standard";
+      const defaultType = "standard";
       if (estimateTypeFilter !== defaultType) {
         setEstimateTypeFilter(defaultType);
-        setDateFilter(""); // 타입 변경 시 날짜 필터도 초기화
+        setDateFilter("");
       }
     }
   }, [currentHall, estimateTypesForDateButtons]);
-
-  // 3. 필터링된 날짜 목록이 변경되면, 첫번째 날짜를 기본으로 선택
   useEffect(() => {
     if (filteredDates.length > 0 && !filteredDates.includes(dateFilter)) {
       setDateFilter(filteredDates[0]);
@@ -248,25 +228,22 @@ export default function HallDetailPage() {
     }
   }, [filteredDates, dateFilter]);
 
-  // --- 이미지 프리로딩 로직 ---
+  // --- 이미지 프리로딩 로직 (기존과 동일) ---
   useEffect(() => {
     if (
       currentHall &&
       currentHall.hall_photos &&
       currentHall.hall_photos.length > 0
     ) {
-      setAreImagesPreloaded(false); // 새 홀 선택 시 프리로딩 상태 초기화
+      setAreImagesPreloaded(false);
       let loadedImagesCount = 0;
       const photosToPreload: HallPhoto[] = currentHall.hall_photos;
       const totalImages = photosToPreload.length;
-
       if (totalImages === 0) {
         setAreImagesPreloaded(true);
         return;
       }
-
       photosToPreload.forEach((photo) => {
-        // StaticImageData 타입의 url은 문자열이 아닐 수 있으므로, typeof 체크
         if (typeof photo.url === "string") {
           const img = new Image();
           img.src = photo.url;
@@ -277,7 +254,7 @@ export default function HallDetailPage() {
             }
           };
           img.onerror = () => {
-            loadedImagesCount++; // 오류 발생 시에도 카운트 증가
+            loadedImagesCount++;
             console.error("이미지 프리로딩 오류:", photo.url);
             if (loadedImagesCount === totalImages) {
               setAreImagesPreloaded(true);
@@ -295,7 +272,7 @@ export default function HallDetailPage() {
     }
   }, [currentHall]);
 
-  // --- 이벤트 핸들러 ---
+  // --- 이벤트 핸들러 (기존과 동일) ---
   const handleShowAllPhotos = () => {
     if (!areImagesPreloaded) {
       alert("사진을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
@@ -312,31 +289,24 @@ export default function HallDetailPage() {
     }
   };
   const handleCloseModal = () => setShowImageModal(false);
-
   const openFilterModal = () => {
     setIsFilterModalOpen(true);
     setIsCalculatorModalOpen(false);
   };
-
   const openCalculatorModal = () => {
     setIsCalculatorModalOpen(true);
     setIsFilterModalOpen(false);
   };
-
   const closeModal = () => {
     setIsFilterModalOpen(false);
     setIsCalculatorModalOpen(false);
   };
-
-  // 선호시간대 분류
   const isPreferTime = (timeString) => {
     if (!timeString || typeof timeString !== "string") {
       return false;
     }
-
-    const preferredStartMinutes = 11 * 60; // 11:00 => 660분
-    const preferredEndMinutes = 14.5 * 60; // 14:30 => 870분
-
+    const preferredStartMinutes = 11 * 60;
+    const preferredEndMinutes = 14.5 * 60;
     const parseTimeToMinutes = (timeStr) => {
       const parts = timeStr.split(":");
       const hours = parseInt(parts[0], 10);
@@ -353,13 +323,10 @@ export default function HallDetailPage() {
       }
       return hours * 60 + minutes;
     };
-
     const timeSlots = timeString.match(/\d{1,2}:\d{2}/g);
-
     if (!timeSlots) {
       return false;
     }
-
     for (const slotStr of timeSlots) {
       const slotMinutes = parseTimeToMinutes(slotStr);
       if (!isNaN(slotMinutes)) {
@@ -374,7 +341,7 @@ export default function HallDetailPage() {
     return "서브타임(14:30 이후)";
   };
 
-  // --- 로딩 / 에러 / 데이터 없음 처리 ---
+  // --- 로딩 / 에러 / 데이터 없음 처리 (기존과 동일) ---
   if (isLoading)
     return (
       <div className="flex justify-center items-center h-screen text-lg font-semibold">
@@ -394,10 +361,9 @@ export default function HallDetailPage() {
       </div>
     );
 
-  // --- 필터 UI를 렌더링하는 함수 (데스크톱/모바일 재사용) ---
+  // --- 필터 UI 렌더링 함수 (기존과 동일) ---
   const renderFilterContent = () => (
     <>
-      {/* 홀 이름 필터 */}
       <div className="flex flex-col space-y-1 mb-4">
         <span className="text-sm font-medium text-gray-700">홀 이름</span>
         <div className="flex flex-wrap gap-2 my-2">
@@ -416,7 +382,6 @@ export default function HallDetailPage() {
           ))}
         </div>
       </div>
-      {/* 견적서 종류 필터 */}
       <div className="flex flex-col space-y-1 mb-4">
         <span className="text-sm font-medium text-gray-700">견적서 종류</span>
         <div className="flex flex-wrap gap-2 my-2">
@@ -438,11 +403,9 @@ export default function HallDetailPage() {
           )}
         </div>
       </div>
-      {/* 날짜 필터 */}
       <div className="flex flex-col space-y-1">
         <span className="text-sm font-medium text-gray-700">날짜 선택</span>
         <div className="flex flex-wrap gap-2 my-2">
-          {/* ⭐️ [핵심] filteredDates 사용 */}
           {filteredDates.map((date: string) => {
             const parsedDate = new Date(date);
             const year = parsedDate.getFullYear();
@@ -464,7 +427,6 @@ export default function HallDetailPage() {
               </button>
             );
           })}
-          {/* ⭐️ 필터링된 날짜가 없을 때 메시지 표시 */}
           {estimateTypeFilter && filteredDates.length === 0 && currentHall && (
             <span className="text-xs text-gray-400">
               선택하신 종류의 견적이 있는 날짜가 없습니다.
@@ -487,63 +449,89 @@ export default function HallDetailPage() {
       </div>
       {/* Details */}
       <div className="w-full sm:w-[1250px] flex flex-col lg:flex-row items-start justify-between">
-        {/* 왼쪽 컨텐츠 */}
-        <div className="w-full lg:w-[750px] flex flex-col items-center mb-8 lg:mb-0 px-4 sm:px-0">
-          <HeaderSection
-            name={hallCompany.name}
-            address={hallCompany.address}
-          />
-          <div className="w-full text-right text-sm my-3">
-            <span className="px-3 py-1.5 bg-gray-700 text-white rounded-full">
-              {isPreferTime(displayEstimate?.time)}
-            </span>
+        {/* ⭐️ [수정] 왼쪽 컨텐츠 영역을 relative 컨테이너로 감싸기 */}
+        <div className="relative w-full lg:w-[750px] flex flex-col items-center mb-8 lg:mb-0 px-4 sm:px-0">
+          {/* ⭐️ [수정] 블러 처리를 위한 컨텐츠 그룹 */}
+          <div
+            className={`w-full transition-filter duration-300 ${
+              !userLoading && !user && estimateTypeFilter === "admin"
+                ? "blur-sm select-none"
+                : ""
+            }`}
+          >
+            <HeaderSection
+              name={hallCompany.name}
+              address={hallCompany.address}
+            />
+            <div className="w-full text-right text-sm my-3">
+              <span className="px-3 py-1.5 bg-gray-700 text-white rounded-full">
+                {isPreferTime(displayEstimate?.time)}
+              </span>
+            </div>
+            <div className="w-full border-b border-gray-400 my-2"></div>
+            {displayEstimate ? (
+              <>
+                <BasicInfoSection
+                  standardEstimate={standardEstimate}
+                  adminEstimate={adminEstimate}
+                  displayEstimate={displayEstimate}
+                  name={currentHall?.name || ""}
+                  mood={currentHall?.mood || ""}
+                  time={hallCompany.ceremony_times || ""}
+                  hall_type={currentHall?.type || ""}
+                  guarantee={currentHall?.guarantees || 0}
+                  interval_minutes={currentHall?.interval_minutes || 0}
+                  parking={currentHall?.parking || 0}
+                  price={displayEstimate.hall_price}
+                  meal_prices={displayEstimate.meal_prices || []}
+                />
+                <IncludedSection
+                  hall_includes={currentHall?.hall_includes || []}
+                />
+                <OptionSection
+                  standardEstimate={standardEstimate}
+                  adminEstimate={adminEstimate}
+                  displayEstimate={displayEstimate}
+                  hall_options={displayEstimate.estimate_options || []}
+                />
+                <EtcSection
+                  penalty_amount={displayEstimate.penalty_amount}
+                  penalty_detail={displayEstimate.penalty_detail}
+                  etc={displayEstimate.etcs?.[0]?.content || "정보 없음"}
+                />
+                <HallInfoSection
+                  address={hallCompany.address}
+                  phone={hallCompany.phone}
+                  homepage={hallCompany.homepage}
+                  accessibility={hallCompany.accessibility}
+                  lat={hallCompany.lat}
+                  lng={hallCompany.lng}
+                />
+              </>
+            ) : (
+              <div className="mt-8 text-center text-gray-500 py-20">
+                선택하신 조건에 맞는 상세 견적 정보가 없습니다.
+              </div>
+            )}
           </div>
-          <div className="w-full border-b border-gray-400 my-2"></div>
-          {displayEstimate ? (
-            <>
-              {/* 💡 제안: 가격 비교를 위해 standardEstimate와 adminEstimate를 prop으로 전달 */}
-              <BasicInfoSection
-                standardEstimate={standardEstimate}
-                adminEstimate={adminEstimate}
-                displayEstimate={displayEstimate} // 실제 표시될 데이터
-                name={currentHall?.name || ""}
-                mood={currentHall?.mood || ""}
-                time={hallCompany.ceremony_times || ""}
-                hall_type={currentHall?.type || ""}
-                guarantee={currentHall?.guarantees || 0}
-                interval_minutes={currentHall?.interval_minutes || 0}
-                parking={currentHall?.parking || 0}
-                // 기존에 넘기던 props는 displayEstimate에서 꺼내도록 BasicInfoSection 내부 수정 필요
-                price={displayEstimate.hall_price}
-                meal_prices={displayEstimate.meal_prices || []}
-              />
-              <IncludedSection
-                hall_includes={currentHall?.hall_includes || []}
-              />
-              <OptionSection
-                standardEstimate={standardEstimate}
-                adminEstimate={adminEstimate}
-                displayEstimate={displayEstimate}
-                // 기존에 넘기던 props는 displayEstimate에서 꺼내도록 OptionSection 내부 수정 필요
-                hall_options={displayEstimate.estimate_options || []}
-              />
-              <EtcSection
-                penalty_amount={displayEstimate.penalty_amount}
-                penalty_detail={displayEstimate.penalty_detail}
-                etc={displayEstimate.etcs?.[0]?.content || "정보 없음"}
-              />
-              <HallInfoSection
-                address={hallCompany.address}
-                phone={hallCompany.phone}
-                homepage={hallCompany.homepage}
-                accessibility={hallCompany.accessibility}
-                lat={hallCompany.lat}
-                lng={hallCompany.lng}
-              />
-            </>
-          ) : (
-            <div className="mt-8 text-center text-gray-500">
-              선택하신 조건에 맞는 상세 견적 정보가 없습니다.
+
+          {/* ⭐️ [추가] 로그인 유도 오버레이 */}
+          {!userLoading && !user && estimateTypeFilter === "admin" && (
+            <div className="fixed flex flex-col items-center justify-center z-10 rounded-lg p-4">
+              <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
+                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                  로그인이 필요합니다
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  상세 견적 정보는 로그인 후 확인하실 수 있습니다.
+                </p>
+                <button
+                  onClick={() => router.push("/login")} // 로그인 페이지 경로
+                  className="w-full bg-[#ff767b] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#ff5a5f] transition-colors shadow-lg"
+                >
+                  로그인하고 상세 견적 보기
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -562,7 +550,7 @@ export default function HallDetailPage() {
           </div>
         </div>
       </div>
-      {/* --- 모바일 하단 고정 버튼 --- */}
+      {/* --- 모바일 하단 고정 버튼 (기존과 동일) --- */}
       <div className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-white border-t border-gray-200 flex z-50">
         <button
           onClick={openFilterModal}
@@ -579,7 +567,7 @@ export default function HallDetailPage() {
           />
           필터
         </button>
-        <div className="w-px h-full bg-gray-200"></div> {/* 구분선 */}
+        <div className="w-px h-full bg-gray-200"></div>
         <button
           onClick={openCalculatorModal}
           className={`flex-1 flex flex-col items-center justify-center text-xs font-medium transition-colors ${
@@ -596,7 +584,8 @@ export default function HallDetailPage() {
           견적서 계산기
         </button>
       </div>
-      {/* --- 모바일 필터 모달 (하단 시트 형태) --- */}
+
+      {/* --- 모바일 필터 모달 (기존과 동일) --- */}
       {isFilterModalOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[110] flex items-end transition-opacity duration-300 ease-out"
@@ -630,7 +619,8 @@ export default function HallDetailPage() {
           </div>
         </div>
       )}
-      {/* --- 모바일 계산기 모달 (하단 시트 형태) --- */}
+
+      {/* --- 모바일 계산기 모달 (기존과 동일) --- */}
       {isCalculatorModalOpen && (
         <div
           className="w-full lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[100] flex items-end transition-opacity duration-300 ease-out"
@@ -664,7 +654,8 @@ export default function HallDetailPage() {
           </div>
         </div>
       )}
-      {/* Image Modal */}
+
+      {/* Image Modal (기존과 동일) */}
       {showImageModal && currentHall && currentHall.hall_photos && (
         <ImageModal
           photos={currentHall.hall_photos}

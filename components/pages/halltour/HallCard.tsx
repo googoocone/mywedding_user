@@ -32,13 +32,9 @@ export default function HallCard({
   }, [initialIsLiked]);
 
   const handleClick = () => {
-    if (!user) {
-      setIsPhoneAuthModalOpen(true);
-    } else {
-      const companyName = data.name;
-      const targetUrl = `/halltour/${companyName}`;
-      router.push(targetUrl);
-    }
+    const companyName = data.name;
+    const targetUrl = `/halltour/${companyName}`;
+    router.push(targetUrl);
   };
 
   const handleLikeToggle = async (e: React.MouseEvent) => {
