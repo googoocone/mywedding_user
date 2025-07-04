@@ -4,16 +4,17 @@ export default function Footer() {
       <div className="w-full sm:w-[1250px] h-[200px] flex flex-col items-start justify-start gap-[2px] border-t-gray-300 border-t text-[14px] text-gray-500">
         <div className="mt-10 font-semibold">마이웨딩다이어리</div>
         <div>
-          <strong>대표</strong> 박영호
+          <strong>대표</strong> 노남주
         </div>
         <div>
-          <strong>사업자번호</strong> 875-31-01047
+          <strong>사업자번호</strong> 752-47-01430
         </div>
         <div>
-          <strong>주소</strong> 경기도 화성시 산척동 745{" "}
+          <strong>주소</strong> 경기도 화성시 동탄감배산로 143, 202동 19층
+          1901~35호
         </div>
         <div>
-          <strong>전화</strong> 010-8285-5136
+          <strong>전화</strong> 010-2771-2514
         </div>
         <div>
           <strong>이메일</strong> myweddingdiary2025@gmail.com
