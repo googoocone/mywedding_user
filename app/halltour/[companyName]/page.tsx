@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useContext } from "react";
-import { useParams, useRouter } from "next/navigation"; // ⭐️ useRouter 추가
+import { useParams, useRouter } from "next/navigation";
 import PhotoSection from "@/components/pages/halltour/halldetail/PhotoSection";
 import ImageModal from "@/components/pages/halltour/halldetail/ImageModal";
 import Calculator from "@/components/pages/halltour/halldetail/Calculator";
@@ -77,7 +77,7 @@ interface HallCompany {
 
 export default function HallDetailPage() {
   const { user, loading: userLoading }: any = useContext(AuthContext);
-  const router = useRouter(); // ⭐️ useRouter 인스턴스 생성
+  const router = useRouter();
   const params = useParams();
   const companyNameParam = params.companyName;
   const companyName = Array.isArray(companyNameParam)
@@ -272,6 +272,10 @@ export default function HallDetailPage() {
     }
   }, [currentHall]);
 
+  // --- ⭐️ [추가] 블러 및 로그인 유도 조건 변수 ---
+  const isContentLocked =
+    !userLoading && !user && estimateTypeFilter === "admin";
+
   // --- 이벤트 핸들러 (기존과 동일) ---
   const handleShowAllPhotos = () => {
     if (!areImagesPreloaded) {
@@ -437,6 +441,26 @@ export default function HallDetailPage() {
     </>
   );
 
+  // --- ⭐️ [추가] 로그인 유도 오버레이 UI 렌더링 함수 ---
+  const renderLoginPrompt = () => (
+    <div className="absolute inset-0 flex flex-col items-center justify-center z-10 rounded-lg p-4 bg-white/20 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
+        <h3 className="text-xl font-bold text-gray-800 mb-3">
+          로그인이 필요합니다
+        </h3>
+        <p className="text-gray-600 mb-6">
+          3초만에 로그인하고 2천장의 할인견적서를 확인하세요!
+        </p>
+        <button
+          onClick={() => router.push("/login")}
+          className="w-full bg-[#ff767b] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#ff5a5f] transition-colors shadow-lg"
+        >
+          로그인하고 상세 견적 보기
+        </button>
+      </div>
+    </div>
+  );
+
   // --- 렌더링 ---
   return (
     <div className="w-full relative flex flex-col items-center justify-center pb-20 lg:pb-0">
@@ -449,14 +473,11 @@ export default function HallDetailPage() {
       </div>
       {/* Details */}
       <div className="w-full sm:w-[1250px] flex flex-col lg:flex-row items-start justify-between">
-        {/* ⭐️ [수정] 왼쪽 컨텐츠 영역을 relative 컨테이너로 감싸기 */}
         <div className="relative w-full lg:w-[750px] flex flex-col items-center mb-8 lg:mb-0 px-4 sm:px-0">
-          {/* ⭐️ [수정] 블러 처리를 위한 컨텐츠 그룹 */}
+          {/* ⭐️ [수정] isContentLocked 변수 사용 */}
           <div
             className={`w-full transition-filter duration-300 ${
-              !userLoading && !user && estimateTypeFilter === "admin"
-                ? "blur-sm select-none"
-                : ""
+              isContentLocked ? "blur-sm select-none" : ""
             }`}
           >
             <HeaderSection
@@ -515,25 +536,8 @@ export default function HallDetailPage() {
             )}
           </div>
 
-          {/* ⭐️ [추가] 로그인 유도 오버레이 */}
-          {!userLoading && !user && estimateTypeFilter === "admin" && (
-            <div className="fixed flex flex-col items-center justify-center z-10 rounded-lg p-4">
-              <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
-                <h3 className="text-xl font-bold text-gray-800 mb-3">
-                  로그인이 필요합니다
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  상세 견적 정보는 로그인 후 확인하실 수 있습니다.
-                </p>
-                <button
-                  onClick={() => router.push("/login")} // 로그인 페이지 경로
-                  className="w-full bg-[#ff767b] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#ff5a5f] transition-colors shadow-lg"
-                >
-                  로그인하고 상세 견적 보기
-                </button>
-              </div>
-            </div>
-          )}
+          {/* ⭐️ [수정] isContentLocked 변수 사용 및 오버레이 컴포넌트 화 */}
+          {isContentLocked && renderLoginPrompt()}
         </div>
 
         {/* 오른쪽 필터 & 계산기 (데스크톱용) */}
@@ -542,11 +546,21 @@ export default function HallDetailPage() {
             {renderFilterContent()}
           </div>
           <div className="sticky top-[calc(4rem+180px)]">
-            <Calculator
-              standardEstimate={standardEstimate}
-              adminEstimate={adminEstimate}
-              selectedType={estimateTypeFilter as "standard" | "admin"}
-            />
+            {/* ⭐️ [수정] 계산기 영역에 블러 및 로그인 유도 오버레이 적용 */}
+            <div className="relative">
+              <div
+                className={`transition-filter duration-300 ${
+                  isContentLocked ? "blur-sm select-none" : ""
+                }`}
+              >
+                <Calculator
+                  standardEstimate={standardEstimate}
+                  adminEstimate={adminEstimate}
+                  selectedType={estimateTypeFilter as "standard" | "admin"}
+                />
+              </div>
+              {isContentLocked && renderLoginPrompt()}
+            </div>
           </div>
         </div>
       </div>
@@ -620,7 +634,7 @@ export default function HallDetailPage() {
         </div>
       )}
 
-      {/* --- 모바일 계산기 모달 (기존과 동일) --- */}
+      {/* --- 모바일 계산기 모달 --- */}
       {isCalculatorModalOpen && (
         <div
           className="w-full lg:hidden fixed inset-0 bg-black bg-opacity-30 z-[100] flex items-end transition-opacity duration-300 ease-out"
@@ -644,12 +658,20 @@ export default function HallDetailPage() {
                 <IoClose size={24} />
               </button>
             </div>
-            <div className="calculator-modal-content">
-              <Calculator
-                standardEstimate={standardEstimate}
-                adminEstimate={adminEstimate}
-                selectedType={estimateTypeFilter as "standard" | "admin"}
-              />
+            {/* ⭐️ [수정] 모바일 계산기 모달에 블러 및 로그인 유도 오버레이 적용 */}
+            <div className="calculator-modal-content relative">
+              <div
+                className={`transition-filter duration-300 ${
+                  isContentLocked ? "blur-sm select-none" : ""
+                }`}
+              >
+                <Calculator
+                  standardEstimate={standardEstimate}
+                  adminEstimate={adminEstimate}
+                  selectedType={estimateTypeFilter as "standard" | "admin"}
+                />
+              </div>
+              {isContentLocked && renderLoginPrompt()}
             </div>
           </div>
         </div>
