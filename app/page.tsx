@@ -38,8 +38,9 @@ export default function Home() {
       <div className="w-full">
         <Link href="/story">
           <div className=" w-full h-[45px] sm:h-[60px] bg-[#e5e7eb] text-[10px] xs:text-[12px] sm:text-[16px] flex items-center justify-center mt-[70px] sm:mt-0">
-            🤬 결혼 준비하다 <strong className="mx-1"> 빡친 예비신부가 </strong>{" "}
-            직접 만든 웨딩홀 할인 견적 공유 플랫폼 🤬
+            ❤️2026년 웨딩홀{" "}
+            <span className="ml-1 font-semibold text-lg"> 하반기 견적서</span>가
+            업데이트 중!❤️
           </div>
         </Link>
         {/* <div className="w-full h-[300px] sm:h-[180px] flex flex-col items-center justify-center  gap-30 px-5">
